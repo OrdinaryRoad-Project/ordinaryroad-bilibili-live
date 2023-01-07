@@ -33,8 +33,18 @@ import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
  */
 public interface IBilibiliSendSmsReplyMsgListener {
 
+    /**
+     * 收到弹幕
+     *
+     * @param msg SendSmsReplyMsg
+     */
     void onDanmuMsg(SendSmsReplyMsg msg);
 
+    /**
+     * 收到礼物
+     *
+     * @param msg SendSmsReplyMsg
+     */
     void onSendGift(SendSmsReplyMsg msg);
 
     /**
@@ -50,16 +60,6 @@ public interface IBilibiliSendSmsReplyMsgListener {
      * @param sendSmsReplyMsg SendSmsReplyMsg
      */
     void onEntryEffect(SendSmsReplyMsg sendSmsReplyMsg);
-
-    /**
-     * 其他消息
-     *
-     * @param cmd CmdEnum
-     * @param msg SendSmsReplyMsg
-     */
-    default void onOtherSendSmsReplyMsg(CmdEnum cmd, SendSmsReplyMsg msg) {
-        // ignore
-    }
 
     /**
      * 观看人数变化
@@ -81,4 +81,14 @@ public interface IBilibiliSendSmsReplyMsgListener {
      * @param msg SendSmsReplyMsg
      */
     void onClickUpdate(SendSmsReplyMsg msg);
+
+    /**
+     * 其他消息
+     *
+     * @param cmd CmdEnum
+     * @param msg SendSmsReplyMsg
+     */
+    default void onOtherSendSmsReplyMsg(CmdEnum cmd, SendSmsReplyMsg msg) {
+        // ignore
+    }
 }
