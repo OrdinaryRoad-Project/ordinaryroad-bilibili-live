@@ -95,5 +95,6 @@ public enum CmdEnum {
     LIKE_INFO_V3_CLICK,
     HOT_ROOM_NOTIFY,
     WATCHED_CHANGE,
+    POPULAR_RANK_CHANGED,
     ;
 }
