@@ -72,6 +72,8 @@ public class SendSmsReplyMsg extends BaseBilibiliMsg {
 
     private JsonNode business_id;
 
+    private JsonNode scatter;
+
     private Integer protover;
 
     private Integer roomid;
