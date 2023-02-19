@@ -2,6 +2,9 @@
 
 使用Netty来连接B站直播间的弹幕信息流Websocket接口
 
+- Feature 0: Netty
+- Feature 1: 消息中的未知属性统一放到单独的MAP中
+
 example请看`BilibiliBinaryFrameHandlerTest`测试类
 
 修改创建认证包方法的参数后（直播间真实id，可能跟url中的短id不同）运行查看效果
