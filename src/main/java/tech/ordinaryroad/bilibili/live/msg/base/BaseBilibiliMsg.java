@@ -24,14 +24,19 @@
 
 package tech.ordinaryroad.bilibili.live.msg.base;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import tech.ordinaryroad.bilibili.live.constant.OperationEnum;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author mjz
@@ -43,6 +48,21 @@ public abstract class BaseBilibiliMsg implements Serializable {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static int sequence = 0;
+
+    /**
+     * 未知属性都放在这
+     */
+    private final Map<String, JsonNode> unknownProperties = new HashMap<>();
+
+    @JsonAnyGetter
+    public Map<String, JsonNode> getUnknownProperties() {
+        return unknownProperties;
+    }
+
+    @JsonAnySetter
+    public void setOther(String key, JsonNode value) {
+        this.unknownProperties.put(key, value);
+    }
 
     @JsonIgnore
     public abstract ProtoverEnum getProtoverEnum();
