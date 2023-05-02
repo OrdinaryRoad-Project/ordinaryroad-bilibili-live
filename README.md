@@ -22,6 +22,8 @@ example请看`BilibiliBinaryFrameHandlerTest`测试类
 ### Bilibili协议编解码工具类`BilibiliCodecUtil`
 
 ```java
+
+@Slf4j
 public class BilibiliCodecUtil {
 
     public static final short FRAME_HEADER_LENGTH = 16;
@@ -29,6 +31,10 @@ public class BilibiliCodecUtil {
     public static ByteBuf encode(BaseBilibiliMsg msg) {
         ByteBuf out = Unpooled.buffer(100);
         String bodyJsonString = msg.toString();
+        // HeartbeatMsg不需要正文，如果序列化后得到`{}`，则替换为空字符串
+        if ("{}".equals(bodyJsonString)) {
+            bodyJsonString = "";
+        }
         byte[] bodyBytes = bodyJsonString.getBytes(StandardCharsets.UTF_8);
         int length = bodyBytes.length + FRAME_HEADER_LENGTH;
         out.writeInt(length);
@@ -40,7 +46,29 @@ public class BilibiliCodecUtil {
         return out;
     }
 
-    public static BaseBilibiliMsg decode(ByteBuf in) {
+    public static List<BaseBilibiliMsg> decode(ByteBuf in) {
+        List<BaseBilibiliMsg> msgList = new ArrayList<>();
+        Queue<ByteBuf> pendingByteBuf = new LinkedList<>();
+
+        do {
+            Optional<BaseBilibiliMsg> msg = doDecode(in, pendingByteBuf);
+            msg.ifPresent(msgList::add);
+            in = pendingByteBuf.poll();
+        } while (in != null);
+
+        return msgList;
+    }
+
+    /**
+     * 执行解码操作，有压缩则先解压，解压后可能得到多条消息
+     *
+     * @param in             handler收到的一条消息
+     * @param pendingByteBuf 用于存放未读取完的ByteBuf
+     * @return Optional<BaseBilibiliMsg> 何时为空值：不支持的{@link OperationEnum}，不支持的{@link ProtoverEnum}，{@link #parse(OperationEnum, String)}反序列化失败
+     * @see OperationEnum
+     * @see ProtoverEnum
+     */
+    private static Optional<BaseBilibiliMsg> doDecode(ByteBuf in, Queue<ByteBuf> pendingByteBuf) {
         int length = in.readInt();
         short frameHeaderLength = in.readShort();
         short protoverCode = in.readShort();
@@ -49,6 +77,9 @@ public class BilibiliCodecUtil {
         int contentLength = length - frameHeaderLength;
         byte[] inputBytes = new byte[contentLength];
         in.readBytes(inputBytes);
+        if (in.readableBytes() != 0) {
+            pendingByteBuf.offer(in);
+        }
 
         OperationEnum operationEnum = OperationEnum.getByCode(operationCode);
         if (protoverCode == ProtoverEnum.NORMAL_ZLIB.getCode()) {
@@ -70,7 +101,7 @@ public class BilibiliCodecUtil {
                     }
                     inflater.end();
 
-                    return decode(Unpooled.wrappedBuffer(byteArrayOutputStream.toByteArray()));
+                    return doDecode(Unpooled.wrappedBuffer(byteArrayOutputStream.toByteArray()), pendingByteBuf);
                 }
                 case HEARTBEAT_REPLY -> {
                     BigInteger bigInteger = new BigInteger(inputBytes, 0, 4);
@@ -86,38 +117,37 @@ public class BilibiliCodecUtil {
             String s = new String(inputBytes, StandardCharsets.UTF_8);
             return parse(operationEnum, s);
         } else {
-            System.out.println("暂不支持的版本：" + protoverCode);
-            return null;
+            log.warn("暂不支持的版本：{}", protoverCode);
+            return Optional.empty();
         }
     }
 
-    public static BaseBilibiliMsg parse(OperationEnum operation, String jsonString) {
+    public static Optional<BaseBilibiliMsg> parse(OperationEnum operation, String jsonString) {
         switch (operation) {
             case SEND_SMS_REPLY -> {
                 try {
-                    System.out.println(jsonString);
-                    return BaseBilibiliMsg.OBJECT_MAPPER.readValue(jsonString, SendSmsReplyMsg.class);
+                    return Optional.ofNullable(BaseBilibiliMsg.OBJECT_MAPPER.readValue(jsonString, SendSmsReplyMsg.class));
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
             }
             case AUTH_REPLY -> {
                 try {
-                    return BaseBilibiliMsg.OBJECT_MAPPER.readValue(jsonString, AuthReplyMsg.class);
+                    return Optional.ofNullable(BaseBilibiliMsg.OBJECT_MAPPER.readValue(jsonString, AuthReplyMsg.class));
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
             }
             case HEARTBEAT_REPLY -> {
                 try {
-                    return BaseBilibiliMsg.OBJECT_MAPPER.readValue(jsonString, HeartbeatReplyMsg.class);
+                    return Optional.ofNullable(BaseBilibiliMsg.OBJECT_MAPPER.readValue(jsonString, HeartbeatReplyMsg.class));
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
             }
             default -> {
-                System.out.println("暂不支持 " + operation);
-                return null;
+                log.warn("暂不支持 {}", operation);
+                return Optional.empty();
             }
         }
     }
