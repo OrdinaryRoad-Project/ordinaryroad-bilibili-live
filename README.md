@@ -18,6 +18,7 @@ example请看`BilibiliBinaryFrameHandlerTest`测试类
 > 控制台输出示例
 ![控制台示例](example/console.png)
 > 注：目前protover仅支持2（普通包正文使用zlib压缩）
+> CmdEnum可能不全，需要根据控制台信息手动补（不影响运行）
 
 ### Bilibili协议编解码工具类`BilibiliCodecUtil`
 
