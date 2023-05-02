@@ -96,5 +96,5 @@ public enum CmdEnum {
     HOT_ROOM_NOTIFY,
     WATCHED_CHANGE,
     POPULAR_RANK_CHANGED,
-    ;
+    COMMON_NOTICE_DANMAKU;
 }
