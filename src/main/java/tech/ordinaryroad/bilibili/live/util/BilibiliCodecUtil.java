@@ -54,6 +54,10 @@ public class BilibiliCodecUtil {
     public static ByteBuf encode(BaseBilibiliMsg msg) {
         ByteBuf out = Unpooled.buffer(100);
         String bodyJsonString = msg.toString();
+        // HeartbeatMsg不需要正文，如果序列化后得到`{}`，则替换为空字符串
+        if ("{}".equals(bodyJsonString)) {
+            bodyJsonString = "";
+        }
         byte[] bodyBytes = bodyJsonString.getBytes(StandardCharsets.UTF_8);
         int length = bodyBytes.length + FRAME_HEADER_LENGTH;
         out.writeInt(length);
