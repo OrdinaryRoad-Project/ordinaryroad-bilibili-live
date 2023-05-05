@@ -108,6 +108,7 @@ public enum CmdEnum {
     PK_BATTLE_RANK_CHANGE,
     PK_BATTLE_START,
     PK_BATTLE_PRE,
+    PLAY_TAG,
     ;
 
     public static CmdEnum getByString(String cmd) {
