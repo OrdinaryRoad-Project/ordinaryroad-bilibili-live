@@ -4,14 +4,11 @@
 
 - Feature 0: Netty
 - Feature 1: 消息中的未知属性统一放到单独的MAP中
+- Feature 2: 支持房间短id
 
 example请看`BilibiliBinaryFrameHandlerTest`测试类
 
-修改创建认证包方法的参数后（直播间真实id，可能跟url中的短id不同）运行查看效果
-
-可使用`GET`
-方法调用[https://api.live.bilibili.com/room/v1/Room/room_init?id=](https://api.live.bilibili.com/room/v1/Room/room_init?id=${id})
-接口获取直播间的真实id
+修改创建认证包方法的参数后，运行查看效果
 
 > 创建发送认证包
 ![创建认证包](example/createAuth.png)
@@ -219,7 +216,18 @@ public interface IBilibiliSendSmsReplyMsgListener {
     default void onOtherSendSmsReplyMsg(CmdEnum cmd, SendSmsReplyMsg msg) {
         // ignore
     }
+
+    /**
+     * 未知cmd
+     *
+     * @param cmdString 实际收到的cmd字符串
+     * @param msg       SendSmsReplyMsg
+     */
+    default void onUnknownCmd(String cmdString, SendSmsReplyMsg msg) {
+        // ignore
+    }
 }
+
 ```
 
 ### 相关链接
