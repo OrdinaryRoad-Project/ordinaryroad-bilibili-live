@@ -99,5 +99,22 @@ public enum CmdEnum {
     COMMON_NOTICE_DANMAKU,
     LIVE_MULTI_VIEW_CHANGE,
     RECOMMEND_CARD,
+    PK_BATTLE_START_NEW,
+    PK_BATTLE_ENTRANCE,
+    AREA_RANK_CHANGED,
+    ROOM_BLOCK_MSG,
+    USER_TOAST_MSG,
+    PK_BATTLE_PRE_NEW,
+    PK_BATTLE_RANK_CHANGE,
+    PK_BATTLE_START,
+    PK_BATTLE_PRE,
     ;
+
+    public static CmdEnum getByString(String cmd) {
+        try {
+            return CmdEnum.valueOf(cmd);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

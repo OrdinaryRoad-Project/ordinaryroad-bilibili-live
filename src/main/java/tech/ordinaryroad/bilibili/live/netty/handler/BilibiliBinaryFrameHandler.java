@@ -68,7 +68,11 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
         List<BaseBilibiliMsg> msgList = BilibiliCodecUtil.decode(byteBuf);
         for (BaseBilibiliMsg msg : msgList) {
             if (msg instanceof SendSmsReplyMsg sendSmsReplyMsg) {
-                CmdEnum cmd = sendSmsReplyMsg.getCmd();
+                CmdEnum cmd = sendSmsReplyMsg.getCmdEnum();
+                if (cmd == null) {
+                    listener.onUnknownCmd(sendSmsReplyMsg.getCmd(), sendSmsReplyMsg);
+                    return;
+                }
                 // log.debug("收到 {} 消息 {}", cmd, msg);
                 switch (cmd) {
                     case DANMU_MSG -> listener.onDanmuMsg(sendSmsReplyMsg);

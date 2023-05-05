@@ -91,4 +91,14 @@ public interface IBilibiliSendSmsReplyMsgListener {
     default void onOtherSendSmsReplyMsg(CmdEnum cmd, SendSmsReplyMsg msg) {
         // ignore
     }
+
+    /**
+     * 未知cmd
+     *
+     * @param cmdString 实际收到的cmd字符串
+     * @param msg       SendSmsReplyMsg
+     */
+    default void onUnknownCmd(String cmdString, SendSmsReplyMsg msg) {
+        // ignore
+    }
 }

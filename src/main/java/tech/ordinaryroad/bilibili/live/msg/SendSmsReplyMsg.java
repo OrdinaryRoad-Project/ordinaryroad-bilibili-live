@@ -54,7 +54,7 @@ public class SendSmsReplyMsg extends BaseBilibiliMsg {
 
     private JsonNode side;
 
-    private CmdEnum cmd;
+    private String cmd;
 
     private JsonNode data;
 
@@ -88,5 +88,9 @@ public class SendSmsReplyMsg extends BaseBilibiliMsg {
     @Override
     public OperationEnum getOperationEnum() {
         return OperationEnum.SEND_SMS_REPLY;
+    }
+
+    public CmdEnum getCmdEnum() {
+        return CmdEnum.getByString(this.cmd);
     }
 }
