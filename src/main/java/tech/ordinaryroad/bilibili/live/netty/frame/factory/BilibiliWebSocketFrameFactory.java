@@ -24,9 +24,13 @@
 
 package tech.ordinaryroad.bilibili.live.netty.frame.factory;
 
+import cn.hutool.http.HttpUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.msg.AuthMsg;
 import tech.ordinaryroad.bilibili.live.msg.HeartbeatMsg;
+import tech.ordinaryroad.bilibili.live.msg.base.BaseBilibiliMsg;
 import tech.ordinaryroad.bilibili.live.netty.frame.AuthWebSocketFrame;
 import tech.ordinaryroad.bilibili.live.netty.frame.HeartbeatWebSocketFrame;
 import tech.ordinaryroad.bilibili.live.util.BilibiliCodecUtil;
@@ -50,8 +54,30 @@ public class BilibiliWebSocketFrameFactory {
         return CACHE.computeIfAbsent(protover, BilibiliWebSocketFrameFactory::new);
     }
 
+    /**
+     * 创建认证包
+     *
+     * @param roomId 浏览器地址中的房间id，支持短id
+     * @return AuthWebSocketFrame
+     */
     public AuthWebSocketFrame createAuth(int roomId) {
-        AuthMsg authMsg = new AuthMsg(roomId, this.protover.getCode());
+        int realRoomId;
+        String responseString = HttpUtil.get("https://api.live.bilibili.com/room/v1/Room/room_init?id=" + roomId);
+        System.out.println(responseString);
+        try {
+            JsonNode jsonNode = BaseBilibiliMsg.OBJECT_MAPPER.readTree(responseString);
+            int code = jsonNode.get("code").asInt();
+            if (code == 0) {
+                // 成功
+                JsonNode data = jsonNode.get("data");
+                realRoomId = data.get("room_id").asInt();
+            } else {
+                throw new RuntimeException("认证包创建失败，请检查房间号是否正确。roomId: %d, msg: %s".formatted(roomId, jsonNode.get("msg").asText()));
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        AuthMsg authMsg = new AuthMsg(realRoomId, this.protover.getCode());
         return new AuthWebSocketFrame(BilibiliCodecUtil.encode(authMsg));
     }
 
