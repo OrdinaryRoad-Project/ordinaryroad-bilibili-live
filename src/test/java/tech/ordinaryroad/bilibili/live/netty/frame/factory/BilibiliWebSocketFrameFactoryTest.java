@@ -22,15 +22,24 @@
  * SOFTWARE.
  */
 
-package tech.ordinaryroad.bilibili.live
+package tech.ordinaryroad.bilibili.live.netty.frame.factory;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 
-@SpringBootApplication
-class OrdinaryroadBilibiliLiveApplication
+/**
+ * @author mjz
+ * @date 2023/5/5
+ */
+class BilibiliWebSocketFrameFactoryTest {
 
-fun main(args: Array<String>) {
-    runApplication<OrdinaryroadBilibiliLiveApplication>(*args)
+    @Test
+    void createAuth() {
+        Assertions.assertThrows(RuntimeException.class, () -> BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
+                .createAuth(123));
+
+        Assertions.assertNotNull(BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
+                .createAuth(6));
+    }
 }
-
