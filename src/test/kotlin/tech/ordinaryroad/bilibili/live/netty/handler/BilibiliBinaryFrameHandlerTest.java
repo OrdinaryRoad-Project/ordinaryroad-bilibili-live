@@ -73,7 +73,7 @@ class BilibiliBinaryFrameHandlerTest {
                     JsonNode jsonNode2 = info.get(2);
                     Integer uid = jsonNode2.get(0).asInt();
                     String uname = jsonNode2.get(1).asText();
-                    log.debug("收到弹幕 {}({})：{}", uname, uid, danmuText);
+                    log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
                 }
 
                 @Override
@@ -84,7 +84,7 @@ class BilibiliBinaryFrameHandlerTest {
                     Integer num = data.get("num").asInt();
                     String uname = data.get("uname").asText();
                     Integer price = data.get("price").asInt();
-                    log.debug("收到礼物 {} {} {}x{}({})", uname, action, giftName, num, price);
+                    log.info("收到礼物 {} {} {}x{}({})", uname, action, giftName, num, price);
                 }
 
                 @Override
@@ -125,7 +125,12 @@ class BilibiliBinaryFrameHandlerTest {
 
                 @Override
                 public void onOtherSendSmsReplyMsg(CmdEnum cmd, SendSmsReplyMsg msg) {
-                    log.info("其他消息\n{}", cmd);
+                    log.info("其他消息 {}", cmd);
+                }
+
+                @Override
+                public void onUnknownCmd(String cmdString, SendSmsReplyMsg msg) {
+                    log.info("未知cmd {}", cmdString);
                 }
             });
 
