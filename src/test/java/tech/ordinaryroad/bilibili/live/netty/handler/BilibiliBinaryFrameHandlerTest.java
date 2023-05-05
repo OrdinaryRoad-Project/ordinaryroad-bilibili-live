@@ -136,9 +136,6 @@ class BilibiliBinaryFrameHandlerTest {
 
             //进行握手
             log.info("握手开始");
-            System.out.println(websocketURI.getScheme());
-            System.out.println(websocketURI.getHost());
-            System.out.println(websocketURI.getPort());
 //            SslContext sslCtx = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
             SslContext sslCtx = SslContextBuilder.forClient().build();
 

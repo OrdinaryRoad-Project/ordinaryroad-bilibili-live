@@ -24,6 +24,7 @@
 
 package tech.ordinaryroad.bilibili.live.util;
 
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -55,8 +56,8 @@ public class BilibiliCodecUtil {
         ByteBuf out = Unpooled.buffer(100);
         String bodyJsonString = msg.toString();
         // HeartbeatMsg不需要正文，如果序列化后得到`{}`，则替换为空字符串
-        if ("{}".equals(bodyJsonString)) {
-            bodyJsonString = "";
+        if (StrUtil.EMPTY_JSON.equals(bodyJsonString)) {
+            bodyJsonString = StrUtil.EMPTY;
         }
         byte[] bodyBytes = bodyJsonString.getBytes(StandardCharsets.UTF_8);
         int length = bodyBytes.length + FRAME_HEADER_LENGTH;
@@ -105,6 +106,9 @@ public class BilibiliCodecUtil {
         }
 
         OperationEnum operationEnum = OperationEnum.getByCode(operationCode);
+        if (operationEnum == null) {
+            throw new RuntimeException("未知operation: %d".formatted(operationCode));
+        }
         if (protoverCode == ProtoverEnum.NORMAL_ZLIB.getCode()) {
             switch (operationEnum) {
                 case SEND_SMS_REPLY -> {
@@ -131,7 +135,6 @@ public class BilibiliCodecUtil {
                     return parse(operationEnum, "{\"popularity\":%d}".formatted(bigInteger));
                 }
                 default -> {
-                    System.out.println("operationCode = " + operationCode);
                     String s = new String(inputBytes, StandardCharsets.UTF_8);
                     return parse(operationEnum, s);
                 }
