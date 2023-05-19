@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import tech.ordinaryroad.bilibili.live.constant.OperationEnum;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.msg.AuthReplyMsg;
+import tech.ordinaryroad.bilibili.live.msg.HeartbeatMsg;
 import tech.ordinaryroad.bilibili.live.msg.HeartbeatReplyMsg;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
 import tech.ordinaryroad.bilibili.live.msg.base.BaseBilibiliMsg;
@@ -53,11 +54,14 @@ public class BilibiliCodecUtil {
     public static final short FRAME_HEADER_LENGTH = 16;
 
     public static ByteBuf encode(BaseBilibiliMsg msg) {
-        ByteBuf out = Unpooled.buffer(100);
-        String bodyJsonString = msg.toString();
+        ByteBuf out = Unpooled.buffer(FRAME_HEADER_LENGTH);
+        String bodyJsonString = StrUtil.EMPTY;
         // HeartbeatMsg不需要正文，如果序列化后得到`{}`，则替换为空字符串
-        if (StrUtil.EMPTY_JSON.equals(bodyJsonString)) {
-            bodyJsonString = StrUtil.EMPTY;
+        if (!(msg instanceof HeartbeatMsg)) {
+            bodyJsonString = msg.toString();
+            if (StrUtil.EMPTY_JSON.equals(bodyJsonString)) {
+                bodyJsonString = StrUtil.EMPTY;
+            }
         }
         byte[] bodyBytes = bodyJsonString.getBytes(StandardCharsets.UTF_8);
         int length = bodyBytes.length + FRAME_HEADER_LENGTH;
