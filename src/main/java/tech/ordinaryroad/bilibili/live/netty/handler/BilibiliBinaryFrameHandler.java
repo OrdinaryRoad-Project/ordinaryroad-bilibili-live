@@ -84,18 +84,23 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
                     case LIKE_INFO_V3_UPDATE -> listener.onClickUpdate(sendSmsReplyMsg);
                     case HOT_RANK_CHANGED_V2 -> {
                         // TODO 主播实时活动排名变化
+                        listener.onOtherSendSmsReplyMsg(cmd, sendSmsReplyMsg);
                     }
                     case ONLINE_RANK_COUNT -> {
                         // TODO 高能榜数量更新
+                        listener.onOtherSendSmsReplyMsg(cmd, sendSmsReplyMsg);
                     }
                     case ROOM_REAL_TIME_MESSAGE_UPDATE -> {
                         // TODO 主播粉丝信息更新
+                        listener.onOtherSendSmsReplyMsg(cmd, sendSmsReplyMsg);
                     }
                     case STOP_LIVE_ROOM_LIST -> {
-                        // TODO 停止的直播间信息
+                        // TODO 停止直播的房间ID列表
+                        listener.onOtherSendSmsReplyMsg(cmd, sendSmsReplyMsg);
                     }
                     case ONLINE_RANK_V2 -> {
                         // TODO 高能用户排行榜 更新
+                        listener.onOtherSendSmsReplyMsg(cmd, sendSmsReplyMsg);
                     }
                     default -> {
                         listener.onOtherSendSmsReplyMsg(cmd, sendSmsReplyMsg);
