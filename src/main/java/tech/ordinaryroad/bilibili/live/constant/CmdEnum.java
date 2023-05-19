@@ -65,6 +65,9 @@ public enum CmdEnum {
     LIVE,
     LIVE_INTERACTIVE_GAME,
     NOTICE_MSG,
+    /**
+     * 高能榜数量更新
+     */
     ONLINE_RANK_COUNT,
     ONLINE_RANK_TOP3,
     ONLINE_RANK_V2,
@@ -76,10 +79,13 @@ public enum CmdEnum {
     PK_BATTLE_SETTLE_USER,
     PK_BATTLE_SETTLE_V2,
     /**
-     * 结束直播
+     * 主播准备中
      */
     PREPARING,
     ROOM_REAL_TIME_MESSAGE_UPDATE,
+    /**
+     * 停止直播的房间ID列表
+     */
     STOP_LIVE_ROOM_LIST,
     /**
      * 醒目留言
@@ -91,9 +97,18 @@ public enum CmdEnum {
      */
     SUPER_CHAT_MESSAGE_DELETE,
     WIDGET_BANNER,
+    /**
+     * 点赞数更新
+     */
     LIKE_INFO_V3_UPDATE,
+    /**
+     * 为主播点赞
+     */
     LIKE_INFO_V3_CLICK,
     HOT_ROOM_NOTIFY,
+    /**
+     * 观看人数变化
+     */
     WATCHED_CHANGE,
     POPULAR_RANK_CHANGED,
     COMMON_NOTICE_DANMAKU,
