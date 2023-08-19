@@ -63,7 +63,7 @@
 
         <brotli4j.version>1.11.0</brotli4j.version>
         <jackson-databind.version>2.15.0</jackson-databind.version>
-        <hutool-all.version>5.8.15</hutool-all.version>
+        <hutool-all.version>5.8.21</hutool-all.version>
         <netty-all.version>4.1.90.Final</netty-all.version>
         <logback-classic.version>1.4.6</logback-classic.version>
         <lombok.version>1.18.26</lombok.version>
