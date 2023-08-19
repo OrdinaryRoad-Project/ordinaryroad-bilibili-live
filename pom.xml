@@ -61,13 +61,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 
-        <brotli4j.version>1.11.0</brotli4j.version>
-        <jackson-databind.version>2.15.0</jackson-databind.version>
+        <brotli4j.version>1.12.0</brotli4j.version>
+        <jackson-databind.version>2.15.2</jackson-databind.version>
         <hutool-all.version>5.8.21</hutool-all.version>
-        <netty-all.version>4.1.90.Final</netty-all.version>
-        <logback-classic.version>1.4.6</logback-classic.version>
-        <lombok.version>1.18.26</lombok.version>
-        <junit-jupiter.version>5.9.2</junit-jupiter.version>
+        <netty-all.version>4.1.96.Final</netty-all.version>
+        <logback-classic.version>1.4.11</logback-classic.version>
+        <lombok.version>1.18.28</lombok.version>
+        <junit-jupiter.version>5.10.0</junit-jupiter.version>
     </properties>
 
     <dependencies>
