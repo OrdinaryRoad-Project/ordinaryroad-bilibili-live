@@ -8,6 +8,10 @@
 - Feature 1: 消息中的未知属性统一放到单独的MAP中
 - Feature 2: 支持房间短id
 
+> 适配清单
+> - LOG_IN_NOTICE： 未登录观看直播一段时间后，会导致不显示用户名、uid信息问题 <img width="1512" alt="image" src="https://github.com/1962247851/ordinaryroad-bilibili-live/assets/43869694/21b38f50-aa3e-4e3e-b4b1-8064bb9bacb2">
+
+
 ### 1. 引入依赖
 
 ```xml
