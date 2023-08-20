@@ -39,8 +39,47 @@ public class BilibiliApis {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static JsonNode roomInit(int roomId) {
+    public static JsonNode roomInit(long roomId) {
         String responseString = HttpUtil.get("https://api.live.bilibili.com/room/v1/Room/room_init?id=" + roomId);
+        return responseInterceptor(responseString);
+    }
+
+    /**
+     * @param roomId
+     * @param type   直播间用0
+     * @return <pre>{@code
+     * {
+     * 	"group": "live",
+     * 	"business_id": 0,
+     * 	"refresh_row_factor": 0.125,
+     * 	"refresh_rate": 100,
+     * 	"max_delay": 5000,
+     * 	"token": "-wm5-Qo4BBAztd1qp5ZJpgyTMRBhCc7yikz5d9rAd63PV46G9BMwl0R10kMM8Ilb-UieZGjLtipPrz4Cvi0DdhGFwOi8PJpFN9K-LoXh6Z_4yjEIwgRerDiMIstHzJ80J3B7wnRisAYkWA==",
+     * 	"host_list": [{
+     * 		"host": "ali-bj-live-comet-09.chat.bilibili.com",
+     * 		"port": 2243,
+     * 		"wss_port": 443,
+     * 		"ws_port": 2244
+     *        }, {
+     * 		"host": "ali-gz-live-comet-02.chat.bilibili.com",
+     * 		"port": 2243,
+     * 		"wss_port": 443,
+     * 		"ws_port": 2244
+     *    }, {
+     * 		"host": "broadcastlv.chat.bilibili.com",
+     * 		"port": 2243,
+     * 		"wss_port": 443,
+     * 		"ws_port": 2244
+     *    }]
+     * }
+     * }</pre>
+     */
+    public static JsonNode getDanmuInfo(long roomId, int type) {
+        String responseString = HttpUtil.get("https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id=" + roomId + "&type=" + type);
+        return responseInterceptor(responseString);
+    }
+
+    private static JsonNode responseInterceptor(String responseString) {
         try {
             JsonNode jsonNode = OBJECT_MAPPER.readTree(responseString);
             int code = jsonNode.get("code").asInt();
@@ -48,7 +87,7 @@ public class BilibiliApis {
                 // 成功
                 return jsonNode.get("data");
             } else {
-                throw new RuntimeException(jsonNode.get("msg").asText());
+                throw new RuntimeException(jsonNode.get("message").asText());
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

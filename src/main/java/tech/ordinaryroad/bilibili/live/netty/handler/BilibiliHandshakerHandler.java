@@ -24,13 +24,11 @@
 
 package tech.ordinaryroad.bilibili.live.netty.handler;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
@@ -41,17 +39,15 @@ import java.nio.charset.StandardCharsets;
  * @date 2023/1/4
  */
 @Slf4j
+@ChannelHandler.Sharable
 public class BilibiliHandshakerHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
 
     private final WebSocketClientHandshaker handshaker;
+    @Getter
     private ChannelPromise handshakeFuture;
 
     public BilibiliHandshakerHandler(WebSocketClientHandshaker handshaker) {
         this.handshaker = handshaker;
-    }
-
-    public ChannelFuture handshakeFuture() {
-        return this.handshakeFuture;
     }
 
     @Override
@@ -64,30 +60,33 @@ public class BilibiliHandshakerHandler extends SimpleChannelInboundHandler<FullH
         this.handshaker.handshake(ctx.channel());
     }
 
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse message) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpResponse msg) throws Exception {
         // 判断是否正确握手
-        if (!this.handshaker.isHandshakeComplete()) {
+        if (this.handshaker.isHandshakeComplete()) {
+            handshakeSuccessfully(ctx, msg);
+        } else {
             try {
-                this.handshaker.finishHandshake(ctx.channel(), (FullHttpResponse) message);
-                log.debug("握手完成!");
-                this.handshakeFuture.setSuccess();
+                handshakeSuccessfully(ctx, msg);
             } catch (WebSocketHandshakeException e) {
-                log.debug("握手失败!");
-                this.handshakeFuture.setFailure(e);
+                handshakeFailed(msg, e);
             }
-            return;
+        }
+    }
 
-        }
-        // 握手失败响应
-        if (message instanceof FullHttpResponse) {
-            FullHttpResponse response = (FullHttpResponse) message;
-            log.error("握手失败！code:{},msg:{}", response.status(), response.content().toString(StandardCharsets.UTF_8));
-        }
+    private void handshakeSuccessfully(ChannelHandlerContext ctx, FullHttpResponse msg) {
+        log.debug("握手完成!");
+        this.handshaker.finishHandshake(ctx.channel(), msg);
+        this.handshakeFuture.setSuccess();
+    }
+
+    private void handshakeFailed(FullHttpResponse msg, WebSocketHandshakeException e) {
+        log.error("握手失败！status:" + msg.status(), e);
+        this.handshakeFuture.setFailure(e);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
+        log.error("exceptionCaught", cause);
         if (!this.handshakeFuture.isDone()) {
             this.handshakeFuture.setFailure(cause);
         }

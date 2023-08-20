@@ -26,14 +26,15 @@ package tech.ordinaryroad.bilibili.live.netty.handler;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.ssl.SslCloseCompletionEvent;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.concurrent.ScheduledFuture;
 import lombok.extern.slf4j.Slf4j;
+import tech.ordinaryroad.bilibili.live.client.BilibiliLiveChatClient;
+import tech.ordinaryroad.bilibili.live.config.BilibiliLiveChatClientConfig;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
@@ -51,15 +52,17 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/1/4
  */
 @Slf4j
+@ChannelHandler.Sharable
 public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<BinaryWebSocketFrame> {
-
+    private final BilibiliLiveChatClient client;
     /**
      * 客户端发送心跳包
      */
     private ScheduledFuture<?> scheduledFuture = null;
     private final IBilibiliSendSmsReplyMsgListener listener;
 
-    public BilibiliBinaryFrameHandler(IBilibiliSendSmsReplyMsgListener listener) {
+    public BilibiliBinaryFrameHandler(BilibiliLiveChatClient client, IBilibiliSendSmsReplyMsgListener listener) {
+        this.client = client;
         this.listener = listener;
     }
 
@@ -112,7 +115,7 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        log.error("userEventTriggered {}", evt.getClass());
+        log.debug("userEventTriggered {}", evt.getClass());
         if (evt instanceof ChannelInputShutdownReadComplete) {
             // TODO
         } else if (evt instanceof SslHandshakeCompletionEvent) {
@@ -121,12 +124,18 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
                 scheduledFuture = null;
             }
             scheduledFuture = ctx.executor().scheduleAtFixedRate(() -> {
+                log.debug("发送心跳包");
                 ctx.writeAndFlush(
                         BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
                                 .createHeartbeat()
-                );
-                log.info("发送心跳包");
-            }, 15, 30, TimeUnit.SECONDS);
+                ).addListener((ChannelFutureListener) future -> {
+                    if (future.isSuccess()) {
+                        log.debug("心跳包发送完成");
+                    } else {
+                        log.error("心跳包发送失败", future.cause());
+                    }
+                });
+            }, getHeartbeatInitialDelay(), getHeartbeatPeriod(), TimeUnit.SECONDS);
         } else if (evt instanceof SslCloseCompletionEvent) {
             if (null != scheduledFuture && !scheduledFuture.isCancelled()) {
                 scheduledFuture.cancel(true);
@@ -136,6 +145,31 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
             log.error("待处理 {}", evt.getClass());
         }
         super.userEventTriggered(ctx, evt);
+    }
+
+    private long getHeartbeatPeriod() {
+        if (client == null) {
+            return BilibiliLiveChatClientConfig.DEFAULT_HEARTBEAT_PERIOD;
+        } else {
+            return client.getConfig().getHeartbeatPeriod();
+        }
+    }
+
+    private long getHeartbeatInitialDelay() {
+        if (client == null) {
+            return BilibiliLiveChatClientConfig.DEFAULT_HEARTBEAT_INITIAL_DELAY;
+        } else {
+            return client.getConfig().getHeartbeatInitialDelay();
+        }
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        if (this.client != null) {
+            ctx.channel().eventLoop().schedule(() -> client.connect(), client.getConfig().getReconnectDelay(), TimeUnit.SECONDS);
+        }
+        listener.onDisconnect(ctx);
+        super.channelUnregistered(ctx);
     }
 
     @Override

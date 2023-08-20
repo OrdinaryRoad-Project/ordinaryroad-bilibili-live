@@ -106,6 +106,7 @@ public class BilibiliCodecUtil {
         byte[] inputBytes = new byte[contentLength];
         in.readBytes(inputBytes);
         if (in.readableBytes() != 0) {
+//            log.error("in.readableBytes() {}", in.readableBytes());
             pendingByteBuf.offer(in);
         }
 
