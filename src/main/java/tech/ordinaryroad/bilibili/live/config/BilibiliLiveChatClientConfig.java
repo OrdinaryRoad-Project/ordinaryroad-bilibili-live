@@ -25,8 +25,7 @@
 package tech.ordinaryroad.bilibili.live.config;
 
 import io.netty.handler.codec.http.HttpObjectAggregator;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 
 /**
@@ -37,6 +36,8 @@ import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class BilibiliLiveChatClientConfig {
 
     public static final long DEFAULT_HEARTBEAT_INITIAL_DELAY = 15;
@@ -45,7 +46,7 @@ public class BilibiliLiveChatClientConfig {
     /**
      * 浏览器中的Cookie
      *
-     * @see {@link tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory}
+     * @see tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory
      */
     private String cookie;
 
@@ -55,7 +56,7 @@ public class BilibiliLiveChatClientConfig {
     private long roomId;
 
     /**
-     * 目前仅支持{@link ProtoverEnum#NORMAL_ZLIB}
+     * @see ProtoverEnum
      */
     @Builder.Default
     private ProtoverEnum protover = ProtoverEnum.NORMAL_ZLIB;
