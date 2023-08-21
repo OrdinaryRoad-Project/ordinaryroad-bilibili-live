@@ -47,6 +47,7 @@ import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
 import tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory;
 
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mjz
@@ -55,23 +56,26 @@ import java.net.URI;
 @Slf4j
 class BilibiliBinaryFrameHandlerTest {
 
+    static Object lock = new Object();
+
     @Test
-    public void example() {
+    public void example() throws InterruptedException {
+        Bootstrap bootstrap = new Bootstrap();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
         try {
-            URI websocketURI = new URI("wss://broadcastlv.chat.bilibili.com:2245/sub");
+            URI websocketURI = new URI("wss://broadcastlv.chat.bilibili.com:443/sub");
 
             BilibiliHandshakerHandler bilibiliHandshakerHandler = new BilibiliHandshakerHandler(WebSocketClientHandshakerFactory.newHandshaker(
                     websocketURI, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
-            BilibiliBinaryFrameHandler bilibiliHandler = new BilibiliBinaryFrameHandler(new IBilibiliSendSmsReplyMsgListener() {
+            BilibiliBinaryFrameHandler bilibiliHandler = new BilibiliBinaryFrameHandler(null, new IBilibiliSendSmsReplyMsgListener() {
                 @Override
                 public void onDanmuMsg(SendSmsReplyMsg msg) {
                     JsonNode info = msg.getInfo();
                     JsonNode jsonNode1 = info.get(1);
                     String danmuText = jsonNode1.asText();
                     JsonNode jsonNode2 = info.get(2);
-                    Integer uid = jsonNode2.get(0).asInt();
+                    Long uid = jsonNode2.get(0).asLong();
                     String uname = jsonNode2.get(1).asText();
                     log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
                 }
@@ -132,6 +136,31 @@ class BilibiliBinaryFrameHandlerTest {
                 public void onUnknownCmd(String cmdString, SendSmsReplyMsg msg) {
                     log.info("未知cmd {}", cmdString);
                 }
+
+                @Override
+                public void onDisconnect(ChannelHandlerContext ctx) {
+                    // 此处可以进行重新连接
+                    ctx.channel().eventLoop().schedule(() -> {
+                        bootstrap.connect().addListener((ChannelFutureListener) connectFuture -> {
+                            if (connectFuture.isSuccess()) {
+                                log.debug("连接成功！");
+                                Channel channel = connectFuture.channel();
+                                // 监听是否握手成功
+                                bilibiliHandshakerHandler.getHandshakeFuture().addListener((ChannelFutureListener) handshakeFuture -> {
+                                    // 5s内认证
+                                    log.debug("发送认证包");
+                                    channel.writeAndFlush(
+                                            BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
+                                                    .createAuth(7777)
+                                    );
+                                });
+                                //channel.closeFuture().sync();
+                            } else {
+                                log.error("连接失败", connectFuture.cause());
+                            }
+                        });
+                    }, 5, TimeUnit.SECONDS);
+                }
             });
 
             //进行握手
@@ -139,10 +168,10 @@ class BilibiliBinaryFrameHandlerTest {
 //            SslContext sslCtx = SslContextBuilder.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
             SslContext sslCtx = SslContextBuilder.forClient().build();
 
-            Bootstrap bootstrap = new Bootstrap()
-                    .group(workerGroup)
+            bootstrap.group(workerGroup)
                     // 创建Channel
                     .channel(NioSocketChannel.class)
+                    .remoteAddress(websocketURI.getHost(), websocketURI.getPort())
                     .option(ChannelOption.TCP_NODELAY, true)
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     // Channel配置
@@ -171,26 +200,36 @@ class BilibiliBinaryFrameHandlerTest {
                         }
                     });
 
-            final Channel channel = bootstrap.connect(websocketURI.getHost(), websocketURI.getPort()).sync().channel();
-
+            Channel channel = bootstrap.connect().sync().channel();
+            log.error("连接成功，5s后将断开连接，模拟自动重连");
+            channel.eventLoop().schedule(() -> {
+                channel.close();
+            }, 5, TimeUnit.SECONDS);
             // 阻塞等待是否握手成功
-            bilibiliHandshakerHandler.handshakeFuture().sync();
-
+            bilibiliHandshakerHandler.getHandshakeFuture().sync();
             // 5s内认证
-            log.info("发送认证包");
+            log.debug("发送认证包");
             channel.writeAndFlush(
                     BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
+                            .createAuth(7777)
+
+
 //                             7777
 //                            .createAuth(545068)
-                            .createAuth(21509476)
+//                            .createAuth(21509476)
 //                            .createAuth(7396329)
             );
 
             channel.closeFuture().sync();
         } catch (Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            workerGroup.shutdownGracefully();
+        }
+
+        // 防止直接退出
+        while (true) {
+            synchronized (lock) {
+                lock.wait();
+            }
         }
     }
 }
