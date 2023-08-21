@@ -67,6 +67,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
             }
         });
 
+        // 防止直接退出
         while (true) {
             synchronized (lock) {
                 lock.wait();
