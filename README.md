@@ -26,6 +26,7 @@
 ```
 
 ### 2. 开始使用
+> Spring Boot 3示例项目：https://github.com/OrdinaryRoad-Project/ordinaryroad-bilibili-live-example
 
 #### 2.1 Client模式
 
