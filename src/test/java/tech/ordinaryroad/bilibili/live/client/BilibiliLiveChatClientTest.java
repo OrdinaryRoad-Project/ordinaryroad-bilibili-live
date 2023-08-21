@@ -47,9 +47,41 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
     BilibiliLiveChatClient client;
 
     @Test
+    void example() throws InterruptedException {
+        String cookie = System.getenv("cookie");
+        log.error("cookie: {}", cookie);
+        BilibiliLiveChatClientConfig config = BilibiliLiveChatClientConfig.builder()
+                // TODO 浏览器Cookie
+                .cookie(cookie)
+                .roomId(7777)
+                .build();
+
+        client = new BilibiliLiveChatClient(config, new IBilibiliSendSmsReplyMsgListener() {
+            @Override
+            public void onDanmuMsg(SendSmsReplyMsg msg) {
+                JsonNode info = msg.getInfo();
+                JsonNode jsonNode1 = info.get(1);
+                String danmuText = jsonNode1.asText();
+                JsonNode jsonNode2 = info.get(2);
+                Long uid = jsonNode2.get(0).asLong();
+                String uname = jsonNode2.get(1).asText();
+                log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
+            }
+        });
+        client.connect();
+
+        // 防止测试时直接退出
+        while (true) {
+            synchronized (lock) {
+                lock.wait();
+            }
+        }
+    }
+
+    @Test
     void autoReconnect() throws Exception {
         String cookie = System.getenv("cookie");
-        log.error("cookie: {}",cookie);
+        log.error("cookie: {}", cookie);
         BilibiliLiveChatClientConfig config = BilibiliLiveChatClientConfig.builder()
                 // TODO 浏览器Cookie
                 .cookie(cookie)
