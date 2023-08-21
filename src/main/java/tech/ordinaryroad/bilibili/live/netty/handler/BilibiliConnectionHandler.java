@@ -121,10 +121,14 @@ public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullH
                     }
                 });
             }, getHeartbeatInitialDelay(), getHeartbeatPeriod(), TimeUnit.SECONDS);
-            listener.onConnected();
+            if (this.listener != null) {
+                listener.onConnected();
+            }
         } else if (evt instanceof SslCloseCompletionEvent) {
             heartbeatCancel();
-            listener.onDisconnected(BilibiliConnectionHandler.this);
+            if (this.listener != null) {
+                listener.onDisconnected(BilibiliConnectionHandler.this);
+            }
         } else {
             log.error("待处理 {}", evt.getClass());
         }
@@ -171,7 +175,9 @@ public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullH
     private void handshakeFailed(FullHttpResponse msg, WebSocketHandshakeException e) {
         log.error("握手失败！status:" + msg.status(), e);
         this.handshakeFuture.setFailure(e);
-        this.listener.onConnectFailed(this);
+        if (listener != null) {
+            this.listener.onConnectFailed(this);
+        }
     }
 
     @Override

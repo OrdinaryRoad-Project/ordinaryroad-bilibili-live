@@ -53,9 +53,15 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
 
     public BilibiliBinaryFrameHandler(IBilibiliSendSmsReplyMsgListener listener) {
         this.listener = listener;
+        if (listener == null) {
+            log.warn("listener not set");
+        }
     }
 
     protected void channelRead0(ChannelHandlerContext ctx, BinaryWebSocketFrame message) throws Exception {
+        if (this.listener == null) {
+            return;
+        }
         ByteBuf byteBuf = message.content();
         List<BaseBilibiliMsg> msgList = BilibiliCodecUtil.decode(byteBuf);
         for (BaseBilibiliMsg msg : msgList) {
