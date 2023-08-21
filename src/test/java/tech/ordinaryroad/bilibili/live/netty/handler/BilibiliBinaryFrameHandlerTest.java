@@ -40,6 +40,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import tech.ordinaryroad.bilibili.live.api.BilibiliApis;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
@@ -62,6 +63,11 @@ class BilibiliBinaryFrameHandlerTest {
 
     @Test
     public void example() throws InterruptedException {
+        // TODO 设置浏览器Cookie
+        String cookie = System.getenv("cookie");
+        log.error("cookie: {}", cookie);
+        BilibiliApis.cookies = cookie;
+
         Bootstrap bootstrap = new Bootstrap();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         BilibiliConnectionHandler connectionHandler = null;
@@ -86,11 +92,7 @@ class BilibiliBinaryFrameHandlerTest {
                             // 监听是否握手成功
                             connectionHandler.getHandshakeFuture().addListener((ChannelFutureListener) handshakeFuture -> {
                                 // 5s内认证
-                                log.debug("发送认证包");
-                                channel.writeAndFlush(
-                                        BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                                                .createAuth(7777)
-                                );
+                                sendAuth();
                             });
                         } else {
                             log.error("连接建立失败", connectFuture.cause());
@@ -109,7 +111,7 @@ class BilibiliBinaryFrameHandlerTest {
         try {
             URI websocketURI = new URI("wss://broadcastlv.chat.bilibili.com:443/sub");
 
-             connectionHandler = new BilibiliConnectionHandler(
+            connectionHandler = new BilibiliConnectionHandler(
                     WebSocketClientHandshakerFactory.newHandshaker(
                             websocketURI,
                             WebSocketVersion.V13,
@@ -230,17 +232,7 @@ class BilibiliBinaryFrameHandlerTest {
             // 阻塞等待是否握手成功
             connectionHandler.getHandshakeFuture().sync();
             // 5s内认证
-            log.debug("发送认证包");
-            channel.writeAndFlush(
-                    BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                            .createAuth(7777)
-
-
-//                             7777
-//                            .createAuth(545068)
-//                            .createAuth(21509476)
-//                            .createAuth(7396329)
-            );
+            sendAuth();
 
             channel.closeFuture().sync();
         } catch (Exception e) {
@@ -255,5 +247,15 @@ class BilibiliBinaryFrameHandlerTest {
                 lock.wait();
             }
         }
+    }
+
+    private void sendAuth() {
+        log.debug("发送认证包");
+        channel.writeAndFlush(
+                // TODO 修改版本
+                BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
+                        // TODO 修改房间ID
+                        .createAuth(7777)
+        );
     }
 }
