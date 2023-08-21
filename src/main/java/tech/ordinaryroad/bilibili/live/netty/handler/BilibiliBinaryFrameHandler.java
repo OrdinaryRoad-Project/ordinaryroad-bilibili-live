@@ -26,47 +26,46 @@ package tech.ordinaryroad.bilibili.live.netty.handler;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import io.netty.handler.ssl.SslCloseCompletionEvent;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
-import io.netty.util.concurrent.ScheduledFuture;
 import lombok.extern.slf4j.Slf4j;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
-import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
 import tech.ordinaryroad.bilibili.live.msg.base.BaseBilibiliMsg;
-import tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory;
 import tech.ordinaryroad.bilibili.live.util.BilibiliCodecUtil;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 /**
+ * 消息处理器
+ *
  * @author mjz
  * @date 2023/1/4
  */
 @Slf4j
+@ChannelHandler.Sharable
 public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<BinaryWebSocketFrame> {
-
-    /**
-     * 客户端发送心跳包
-     */
-    private ScheduledFuture<?> scheduledFuture = null;
     private final IBilibiliSendSmsReplyMsgListener listener;
 
     public BilibiliBinaryFrameHandler(IBilibiliSendSmsReplyMsgListener listener) {
         this.listener = listener;
+        if (listener == null) {
+            log.warn("listener not set");
+        }
     }
 
     protected void channelRead0(ChannelHandlerContext ctx, BinaryWebSocketFrame message) throws Exception {
+        if (this.listener == null) {
+            return;
+        }
         ByteBuf byteBuf = message.content();
         List<BaseBilibiliMsg> msgList = BilibiliCodecUtil.decode(byteBuf);
         for (BaseBilibiliMsg msg : msgList) {
+            // log.debug("收到消息 {}", msg.getClass());
             if (msg instanceof SendSmsReplyMsg sendSmsReplyMsg) {
                 CmdEnum cmd = sendSmsReplyMsg.getCmdEnum();
                 if (cmd == null) {
@@ -108,34 +107,6 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
                 }
             }
         }
-    }
-
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        log.error("userEventTriggered {}", evt.getClass());
-        if (evt instanceof ChannelInputShutdownReadComplete) {
-            // TODO
-        } else if (evt instanceof SslHandshakeCompletionEvent) {
-            if (null != scheduledFuture && !scheduledFuture.isCancelled()) {
-                scheduledFuture.cancel(true);
-                scheduledFuture = null;
-            }
-            scheduledFuture = ctx.executor().scheduleAtFixedRate(() -> {
-                ctx.writeAndFlush(
-                        BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                                .createHeartbeat()
-                );
-                log.info("发送心跳包");
-            }, 15, 30, TimeUnit.SECONDS);
-        } else if (evt instanceof SslCloseCompletionEvent) {
-            if (null != scheduledFuture && !scheduledFuture.isCancelled()) {
-                scheduledFuture.cancel(true);
-                scheduledFuture = null;
-            }
-        } else {
-            log.error("待处理 {}", evt.getClass());
-        }
-        super.userEventTriggered(ctx, evt);
     }
 
     @Override

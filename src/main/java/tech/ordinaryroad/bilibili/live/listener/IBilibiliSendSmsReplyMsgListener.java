@@ -24,6 +24,8 @@
 
 package tech.ordinaryroad.bilibili.live.listener;
 
+import io.netty.channel.ChannelHandlerContext;
+import tech.ordinaryroad.bilibili.live.client.BilibiliLiveChatClient;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
 
@@ -38,49 +40,63 @@ public interface IBilibiliSendSmsReplyMsgListener {
      *
      * @param msg SendSmsReplyMsg
      */
-    void onDanmuMsg(SendSmsReplyMsg msg);
+    default void onDanmuMsg(SendSmsReplyMsg msg) {
+        // ignore
+    }
 
     /**
      * 收到礼物
      *
      * @param msg SendSmsReplyMsg
      */
-    void onSendGift(SendSmsReplyMsg msg);
+    default void onSendGift(SendSmsReplyMsg msg) {
+        // ignore
+    }
 
     /**
      * 普通用户进入直播间
      *
      * @param msg SendSmsReplyMsg
      */
-    void onEnterRoom(SendSmsReplyMsg msg);
+    default void onEnterRoom(SendSmsReplyMsg msg) {
+        // ignore
+    }
 
     /**
      * 入场效果（高能用户）
      *
      * @param sendSmsReplyMsg SendSmsReplyMsg
      */
-    void onEntryEffect(SendSmsReplyMsg sendSmsReplyMsg);
+    default void onEntryEffect(SendSmsReplyMsg sendSmsReplyMsg) {
+        // ignore
+    }
 
     /**
      * 观看人数变化
      *
      * @param msg SendSmsReplyMsg
      */
-    void onWatchedChange(SendSmsReplyMsg msg);
+    default void onWatchedChange(SendSmsReplyMsg msg) {
+        // ignore
+    }
 
     /**
      * 为主播点赞
      *
      * @param msg SendSmsReplyMsg
      */
-    void onClickLike(SendSmsReplyMsg msg);
+    default void onClickLike(SendSmsReplyMsg msg) {
+        // ignore
+    }
 
     /**
      * 点赞数更新
      *
      * @param msg SendSmsReplyMsg
      */
-    void onClickUpdate(SendSmsReplyMsg msg);
+    default void onClickUpdate(SendSmsReplyMsg msg) {
+        // ignore
+    }
 
     /**
      * 其他消息

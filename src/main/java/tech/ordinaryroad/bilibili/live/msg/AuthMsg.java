@@ -24,6 +24,7 @@
 
 package tech.ordinaryroad.bilibili.live.msg;
 
+import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -44,28 +45,41 @@ public class AuthMsg extends BaseBilibiliMsg {
     /**
      * 用户uid，0代表游客
      */
-    private int uid;
+    private long uid;
+
     /**
      * 房间id room_id，不是短id short_id
      * 可以通过将url参数id改为直播地址中的数字来查询房间真实id
      * example: <a href="https://api.live.bilibili.com/room/v1/Room/room_init?id=6">https://api.live.bilibili.com/room/v1/Room/room_init?id=6</a>
      */
-    private final int roomid;
+    private final long roomid;
+
     /**
      * 协议版本
      *
      * @see ProtoverEnum#getCode()
      */
     private final int protover;
+
     /**
      * 平台标识
      */
     private String platform = "web";
     private int type = 2;
+
     /**
-     * 认证秘钥
+     * 必须字段
+     *
+     * @since 2023-08-19
      */
-    private String key = StrUtil.EMPTY;
+    private final String buvid;
+
+    /**
+     * 认证秘钥（必须字段）
+     *
+     * @since @since 2023-08-19
+     */
+    private final String key;
 
     @Override
     public ProtoverEnum getProtoverEnum() {

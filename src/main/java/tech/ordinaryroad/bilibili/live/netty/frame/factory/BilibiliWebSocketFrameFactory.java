@@ -24,6 +24,8 @@
 
 package tech.ordinaryroad.bilibili.live.netty.frame.factory;
 
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.NumberUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import tech.ordinaryroad.bilibili.live.api.BilibiliApis;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
@@ -43,6 +45,7 @@ public class BilibiliWebSocketFrameFactory {
 
     private static final ConcurrentHashMap<ProtoverEnum, BilibiliWebSocketFrameFactory> CACHE = new ConcurrentHashMap<>();
     private final ProtoverEnum protover;
+    private volatile static HeartbeatMsg heartbeatMsg;
 
     public BilibiliWebSocketFrameFactory(ProtoverEnum protover) {
         this.protover = protover;
@@ -58,11 +61,15 @@ public class BilibiliWebSocketFrameFactory {
      * @param roomId 浏览器地址中的房间id，支持短id
      * @return AuthWebSocketFrame
      */
-    public AuthWebSocketFrame createAuth(int roomId) {
+    public AuthWebSocketFrame createAuth(long roomId) {
         try {
+            String buvid3 = BilibiliApis.getCookie("buvid3", () -> UUID.randomUUID().toString());
+            String uid = BilibiliApis.getCookie("DedeUserID", () -> "0");
             JsonNode data = BilibiliApis.roomInit(roomId);
+            JsonNode danmuInfo = BilibiliApis.getDanmuInfo(roomId, 0);
             int realRoomId = data.get("room_id").asInt();
-            AuthMsg authMsg = new AuthMsg(realRoomId, this.protover.getCode());
+            AuthMsg authMsg = new AuthMsg(realRoomId, this.protover.getCode(), buvid3, danmuInfo.get("token").asText());
+            authMsg.setUid(NumberUtil.parseLong(uid));
             return new AuthWebSocketFrame(BilibiliCodecUtil.encode(authMsg));
         } catch (Exception e) {
             throw new RuntimeException("认证包创建失败，请检查房间号是否正确。roomId: %d, msg: %s".formatted(roomId, e.getMessage()));
@@ -70,8 +77,23 @@ public class BilibiliWebSocketFrameFactory {
     }
 
     public HeartbeatWebSocketFrame createHeartbeat() {
-        HeartbeatMsg heartbeatMsg = new HeartbeatMsg(this.protover.getCode());
-        return new HeartbeatWebSocketFrame(BilibiliCodecUtil.encode(heartbeatMsg));
+        return new HeartbeatWebSocketFrame(BilibiliCodecUtil.encode(this.getHeartbeatMsg()));
+    }
+
+    /**
+     * 心跳包单例模式
+     *
+     * @return HeartbeatWebSocketFrame
+     */
+    public HeartbeatMsg getHeartbeatMsg() {
+        if (heartbeatMsg == null) {
+            synchronized (BilibiliWebSocketFrameFactory.this) {
+                if (heartbeatMsg == null) {
+                    heartbeatMsg = new HeartbeatMsg(this.protover.getCode());
+                }
+            }
+        }
+        return heartbeatMsg;
     }
 
 }

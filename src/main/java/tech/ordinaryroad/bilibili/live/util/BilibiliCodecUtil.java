@@ -25,6 +25,8 @@
 package tech.ordinaryroad.bilibili.live.util;
 
 import cn.hutool.core.util.StrUtil;
+import com.aayushatharva.brotli4j.Brotli4jLoader;
+import com.aayushatharva.brotli4j.decoder.BrotliInputStream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -37,7 +39,9 @@ import tech.ordinaryroad.bilibili.live.msg.HeartbeatReplyMsg;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
 import tech.ordinaryroad.bilibili.live.msg.base.BaseBilibiliMsg;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -106,6 +110,7 @@ public class BilibiliCodecUtil {
         byte[] inputBytes = new byte[contentLength];
         in.readBytes(inputBytes);
         if (in.readableBytes() != 0) {
+            // log.error("in.readableBytes() {}", in.readableBytes());
             pendingByteBuf.offer(in);
         }
 
@@ -144,8 +149,69 @@ public class BilibiliCodecUtil {
                 }
             }
         } else if (protoverCode == ProtoverEnum.NORMAL_NO_COMPRESSION.getCode()) {
-            String s = new String(inputBytes, StandardCharsets.UTF_8);
-            return parse(operationEnum, s);
+            switch (operationEnum) {
+                case HEARTBEAT_REPLY -> {
+                    BigInteger bigInteger = new BigInteger(inputBytes, 0, 4);
+                    return parse(operationEnum, "{\"popularity\":%d}".formatted(bigInteger));
+                }
+                default -> {
+                    String s = new String(inputBytes, StandardCharsets.UTF_8);
+                    return parse(operationEnum, s);
+                }
+            }
+        } else if (protoverCode == ProtoverEnum.HEARTBEAT_AUTH_NO_COMPRESSION.getCode()) {
+            switch (operationEnum) {
+                case HEARTBEAT_REPLY -> {
+                    BigInteger bigInteger = new BigInteger(inputBytes, 0, 4);
+                    return parse(operationEnum, "{\"popularity\":%d}".formatted(bigInteger));
+                }
+                default -> {
+                    String s = new String(inputBytes, StandardCharsets.UTF_8);
+                    return parse(operationEnum, s);
+                }
+            }
+        } else if (protoverCode == ProtoverEnum.NORMAL_BROTLI.getCode()) {
+            switch (operationEnum) {
+                case SEND_SMS_REPLY -> {
+                    // Load the native library
+                    Brotli4jLoader.ensureAvailability();
+
+                    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(inputBytes);
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(contentLength);
+                    byte[] bytes = new byte[1024];
+                    BrotliInputStream brotliInputStream = null;
+                    ByteBuf wrappedBuffer = null;
+                    try {
+                        brotliInputStream = new BrotliInputStream(byteArrayInputStream);
+                        int count;
+                        while ((count = brotliInputStream.read(bytes)) > -1) {
+                            byteArrayOutputStream.write(bytes, 0, count);
+                        }
+                        wrappedBuffer = Unpooled.wrappedBuffer(byteArrayOutputStream.toByteArray());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        try {
+                            // Close the BrotliInputStream. This also closes the InputStream.
+                            if (brotliInputStream != null) {
+                                brotliInputStream.close();
+                            }
+                            byteArrayOutputStream.close();
+                        } catch (IOException e) {
+                            log.error("解压失败", e);
+                        }
+                    }
+                    return doDecode(wrappedBuffer, pendingByteBuf);
+                }
+                case HEARTBEAT_REPLY -> {
+                    BigInteger bigInteger = new BigInteger(inputBytes, 0, 4);
+                    return parse(operationEnum, "{\"popularity\":%d}".formatted(bigInteger));
+                }
+                default -> {
+                    String s = new String(inputBytes, StandardCharsets.UTF_8);
+                    return parse(operationEnum, s);
+                }
+            }
         } else {
             log.warn("暂不支持的版本：{}", protoverCode);
             return Optional.empty();

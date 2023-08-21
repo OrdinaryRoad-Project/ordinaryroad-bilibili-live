@@ -35,6 +35,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum CmdEnum {
     /**
+     * 游客状态下，5分钟后会出现登录提示，弹幕中的用户名、用户id等信息将不再可见
+     */
+    LOG_IN_NOTICE,
+    /**
      * 收到弹幕
      */
     DANMU_MSG,
@@ -51,6 +55,9 @@ public enum CmdEnum {
      */
     WELCOME_GUARD,
     WELCOME,
+    /**
+     * 礼物连击
+     */
     COMBO_SEND,
     /**
      * 欢迎高能用户、(舰长?待验证)特殊消息
