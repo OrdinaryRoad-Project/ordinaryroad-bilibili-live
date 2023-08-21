@@ -117,13 +117,4 @@ public interface IBilibiliSendSmsReplyMsgListener {
     default void onUnknownCmd(String cmdString, SendSmsReplyMsg msg) {
         // ignore
     }
-
-    /**
-     * 连接断开后回调，使用{@link BilibiliLiveChatClient}时内部已实现自动重连
-     *
-     * @param ctx
-     */
-    default void onDisconnect(ChannelHandlerContext ctx) {
-        // ignore
-    }
 }

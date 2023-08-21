@@ -43,6 +43,13 @@ public class BilibiliLiveChatClientConfig {
     public static final long DEFAULT_HEARTBEAT_PERIOD = 25;
 
     /**
+     * 浏览器中的Cookie
+     *
+     * @see {@link tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory}
+     */
+    private String cookie;
+
+    /**
      * 直播间id，支持短id
      */
     private long roomId;
@@ -52,6 +59,12 @@ public class BilibiliLiveChatClientConfig {
      */
     @Builder.Default
     private ProtoverEnum protover = ProtoverEnum.NORMAL_ZLIB;
+
+    /**
+     * 是否启用自动重连
+     */
+    @Builder.Default
+    private boolean autoReconnect = Boolean.TRUE;
 
     /**
      * 重试延迟时间（秒），默认5s后重试

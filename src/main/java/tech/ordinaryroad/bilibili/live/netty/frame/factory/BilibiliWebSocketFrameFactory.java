@@ -24,6 +24,8 @@
 
 package tech.ordinaryroad.bilibili.live.netty.frame.factory;
 
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.NumberUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import tech.ordinaryroad.bilibili.live.api.BilibiliApis;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
@@ -33,7 +35,6 @@ import tech.ordinaryroad.bilibili.live.netty.frame.AuthWebSocketFrame;
 import tech.ordinaryroad.bilibili.live.netty.frame.HeartbeatWebSocketFrame;
 import tech.ordinaryroad.bilibili.live.util.BilibiliCodecUtil;
 
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -62,10 +63,13 @@ public class BilibiliWebSocketFrameFactory {
      */
     public AuthWebSocketFrame createAuth(long roomId) {
         try {
+            String buvid3 = BilibiliApis.getCookie("buvid3", () -> UUID.randomUUID().toString());
+            String uid = BilibiliApis.getCookie("DedeUserID", () -> "0");
             JsonNode data = BilibiliApis.roomInit(roomId);
             JsonNode danmuInfo = BilibiliApis.getDanmuInfo(roomId, 0);
             int realRoomId = data.get("room_id").asInt();
-            AuthMsg authMsg = new AuthMsg(realRoomId, this.protover.getCode(), UUID.randomUUID().toString(), danmuInfo.get("token").asText());
+            AuthMsg authMsg = new AuthMsg(realRoomId, this.protover.getCode(), buvid3, danmuInfo.get("token").asText());
+            authMsg.setUid(NumberUtil.parseLong(uid));
             return new AuthWebSocketFrame(BilibiliCodecUtil.encode(authMsg));
         } catch (Exception e) {
             throw new RuntimeException("认证包创建失败，请检查房间号是否正确。roomId: %d, msg: %s".formatted(roomId, e.getMessage()));

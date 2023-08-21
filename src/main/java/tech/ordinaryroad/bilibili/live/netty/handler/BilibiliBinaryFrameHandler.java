@@ -48,21 +48,17 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
+ * 消息处理器
+ *
  * @author mjz
  * @date 2023/1/4
  */
 @Slf4j
 @ChannelHandler.Sharable
 public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<BinaryWebSocketFrame> {
-    private final BilibiliLiveChatClient client;
-    /**
-     * 客户端发送心跳包
-     */
-    private ScheduledFuture<?> scheduledFuture = null;
     private final IBilibiliSendSmsReplyMsgListener listener;
 
-    public BilibiliBinaryFrameHandler(BilibiliLiveChatClient client, IBilibiliSendSmsReplyMsgListener listener) {
-        this.client = client;
+    public BilibiliBinaryFrameHandler(IBilibiliSendSmsReplyMsgListener listener) {
         this.listener = listener;
     }
 
@@ -111,65 +107,6 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
                 }
             }
         }
-    }
-
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        log.debug("userEventTriggered {}", evt.getClass());
-        if (evt instanceof ChannelInputShutdownReadComplete) {
-            // TODO
-        } else if (evt instanceof SslHandshakeCompletionEvent) {
-            if (null != scheduledFuture && !scheduledFuture.isCancelled()) {
-                scheduledFuture.cancel(true);
-                scheduledFuture = null;
-            }
-            scheduledFuture = ctx.executor().scheduleAtFixedRate(() -> {
-                log.debug("发送心跳包");
-                ctx.writeAndFlush(
-                        BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                                .createHeartbeat()
-                ).addListener((ChannelFutureListener) future -> {
-                    if (future.isSuccess()) {
-                        log.debug("心跳包发送完成");
-                    } else {
-                        log.error("心跳包发送失败", future.cause());
-                    }
-                });
-            }, getHeartbeatInitialDelay(), getHeartbeatPeriod(), TimeUnit.SECONDS);
-        } else if (evt instanceof SslCloseCompletionEvent) {
-            if (null != scheduledFuture && !scheduledFuture.isCancelled()) {
-                scheduledFuture.cancel(true);
-                scheduledFuture = null;
-            }
-        } else {
-            log.error("待处理 {}", evt.getClass());
-        }
-        super.userEventTriggered(ctx, evt);
-    }
-
-    private long getHeartbeatPeriod() {
-        if (client == null) {
-            return BilibiliLiveChatClientConfig.DEFAULT_HEARTBEAT_PERIOD;
-        } else {
-            return client.getConfig().getHeartbeatPeriod();
-        }
-    }
-
-    private long getHeartbeatInitialDelay() {
-        if (client == null) {
-            return BilibiliLiveChatClientConfig.DEFAULT_HEARTBEAT_INITIAL_DELAY;
-        } else {
-            return client.getConfig().getHeartbeatInitialDelay();
-        }
-    }
-
-    @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        if (this.client != null) {
-            ctx.channel().eventLoop().schedule(() -> client.connect(), client.getConfig().getReconnectDelay(), TimeUnit.SECONDS);
-        }
-        listener.onDisconnect(ctx);
-        super.channelUnregistered(ctx);
     }
 
     @Override

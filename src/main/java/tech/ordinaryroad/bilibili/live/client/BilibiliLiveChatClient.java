@@ -41,15 +41,18 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import tech.ordinaryroad.bilibili.live.api.BilibiliApis;
 import tech.ordinaryroad.bilibili.live.config.BilibiliLiveChatClientConfig;
+import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
 import tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory;
 import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliBinaryFrameHandler;
-import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliHandshakerHandler;
+import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliConnectionHandler;
 
 import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * B站直播间弹幕客户端
@@ -58,28 +61,36 @@ import java.net.URISyntaxException;
  * @date 2023/8/20
  */
 @Slf4j
-public class BilibiliLiveChatClient {
+public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
 
     @Getter
     private final BilibiliLiveChatClientConfig config;
-    private final IBilibiliSendSmsReplyMsgListener listener;
+    private final IBilibiliSendSmsReplyMsgListener msgListener;
+    private final IBilibiliConnectionListener connectionListener;
+    @Getter
     private final EventLoopGroup workerGroup;
 
     @Getter
     private final Bootstrap bootstrap = new Bootstrap();
     private BilibiliBinaryFrameHandler bilibiliBinaryFrameHandler;
-    private BilibiliHandshakerHandler bilibiliHandshakerHandler;
+    private BilibiliConnectionHandler bilibiliConnectionHandler;
     private Channel channel;
     private volatile boolean initialized = false;
+    private volatile boolean connected = false;
 
-    public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener listener, EventLoopGroup workerGroup) {
+    public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener msgListener, IBilibiliConnectionListener connectionListener, EventLoopGroup workerGroup) {
         this.config = config;
-        this.listener = listener;
+        this.msgListener = msgListener;
+        this.connectionListener = connectionListener;
         this.workerGroup = workerGroup;
     }
 
-    public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener listener) {
-        this(config, listener, new NioEventLoopGroup());
+    public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener msgListener, IBilibiliConnectionListener connectionListener) {
+        this(config, msgListener, connectionListener, new NioEventLoopGroup());
+    }
+
+    public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener msgListener) {
+        this(config, msgListener, null, new NioEventLoopGroup());
     }
 
     /**
@@ -90,10 +101,13 @@ public class BilibiliLiveChatClient {
             return;
         }
         try {
+            BilibiliApis.cookies = config.getCookie();
             URI websocketUri = new URI("wss://broadcastlv.chat.bilibili.com:443/sub");
-            this.bilibiliHandshakerHandler = new BilibiliHandshakerHandler(WebSocketClientHandshakerFactory.newHandshaker(
-                    websocketUri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
-            this.bilibiliBinaryFrameHandler = new BilibiliBinaryFrameHandler(this, this.listener);
+            this.bilibiliConnectionHandler = new BilibiliConnectionHandler(
+                    WebSocketClientHandshakerFactory.newHandshaker(websocketUri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()),
+                    BilibiliLiveChatClient.this, BilibiliLiveChatClient.this
+            );
+            this.bilibiliBinaryFrameHandler = new BilibiliBinaryFrameHandler(this.msgListener);
             SslContext sslCtx = SslContextBuilder.forClient().build();
 
             this.bootstrap.group(this.workerGroup)
@@ -119,8 +133,8 @@ public class BilibiliLiveChatClient {
                             // 添加一个聚合器，这个聚合器主要是将HttpMessage聚合成FullHttpRequest/Response
                             pipeline.addLast(new HttpObjectAggregator(BilibiliLiveChatClient.this.config.getAggregatorMaxContentLength()));
 
-                            // 握手处理器
-                            pipeline.addLast(BilibiliLiveChatClient.this.bilibiliHandshakerHandler);
+                            // 连接处理器
+                            pipeline.addLast(BilibiliLiveChatClient.this.bilibiliConnectionHandler);
                             // 弹幕处理器
                             pipeline.addLast(BilibiliLiveChatClient.this.bilibiliBinaryFrameHandler);
                         }
@@ -143,23 +157,24 @@ public class BilibiliLiveChatClient {
         }
     }
 
-    public void connect(GenericFutureListener genericFutureListener) {
+    public void connect(GenericFutureListener<ChannelFuture> genericFutureListener) {
         this.initCheck();
         this.bootstrap.connect().addListener((ChannelFutureListener) connectFuture -> {
             if (genericFutureListener != null) {
                 genericFutureListener.operationComplete(connectFuture);
             }
             if (connectFuture.isSuccess()) {
-                log.debug("连接成功！");
+                log.debug("连接建立成功！");
                 this.channel = connectFuture.channel();
                 // 监听是否握手成功
-                this.bilibiliHandshakerHandler.getHandshakeFuture().addListener((ChannelFutureListener) handshakeFuture -> {
+                this.bilibiliConnectionHandler.getHandshakeFuture().addListener((ChannelFutureListener) handshakeFuture -> {
                     // 5s内认证
                     log.debug("发送认证包");
                     send(BilibiliWebSocketFrameFactory.getInstance(this.config.getProtover()).createAuth(this.config.getRoomId()));
                 });
             } else {
-                log.error("连接失败", connectFuture.cause());
+                log.error("连接建立失败", connectFuture.cause());
+                this.onConnectFailed(this.bilibiliConnectionHandler);
             }
         });
     }
@@ -168,8 +183,45 @@ public class BilibiliLiveChatClient {
         this.connect(null);
     }
 
+    public void disconnect() {
+        if (this.channel == null) {
+            return;
+        }
+        this.channel.close();
+    }
+
+    public void destroy() {
+        workerGroup.shutdownGracefully();
+    }
+
     public void send(WebSocketFrame msg) {
         this.channel.writeAndFlush(msg);
     }
 
+    @Override
+    public void onConnected() {
+        this.connectionListener.onConnected();
+    }
+
+    @Override
+    public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
+        tryReconnect();
+        this.connectionListener.onConnectFailed(connectionHandler);
+    }
+
+    @Override
+    public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
+        tryReconnect();
+        this.connectionListener.onDisconnected(connectionHandler);
+    }
+
+    private void tryReconnect() {
+        if (!this.config.isAutoReconnect()) {
+            return;
+        }
+        log.debug("{}s后将重新连接", this.config.getReconnectDelay());
+        workerGroup.schedule(() -> {
+            this.connect();
+        }, this.config.getReconnectDelay(), TimeUnit.SECONDS);
+    }
 }

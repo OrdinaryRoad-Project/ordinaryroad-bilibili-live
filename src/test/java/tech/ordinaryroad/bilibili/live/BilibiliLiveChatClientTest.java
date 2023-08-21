@@ -25,14 +25,14 @@
 package tech.ordinaryroad.bilibili.live;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import tech.ordinaryroad.bilibili.live.client.BilibiliLiveChatClient;
 import tech.ordinaryroad.bilibili.live.config.BilibiliLiveChatClientConfig;
+import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
+import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliConnectionHandler;
 
 import java.util.concurrent.TimeUnit;
 
@@ -44,30 +44,73 @@ import java.util.concurrent.TimeUnit;
 class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
     static Object lock = new Object();
+    BilibiliLiveChatClient client;
 
     @Test
-    void autoConnect() throws Exception {
+    void autoReconnect() throws Exception {
         BilibiliLiveChatClientConfig config = BilibiliLiveChatClientConfig.builder()
+                // TODO 浏览器cookie
+                .cookie("")
                 .roomId(7777)
                 .build();
 
-        BilibiliLiveChatClient client = new BilibiliLiveChatClient(config, this);
-        client.connect(new ChannelFutureListener() {
+        client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (future.isSuccess()) {
-                    log.info("连接成功，5s后将断开连接，模拟自动重连");
-                    future.channel().eventLoop().schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            future.channel().close();
-                        }
-                    }, 5, TimeUnit.SECONDS);
-                }
+            public void onConnected() {
+                log.error("onConnected");
+                log.info("连接成功，10s后将断开连接，模拟自动重连");
+                client.getWorkerGroup().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        client.disconnect();
+                    }
+                }, 10, TimeUnit.SECONDS);
+            }
+
+            @Override
+            public void onDisconnected(BilibiliConnectionHandler bilibiliConnectionHandler) {
+                log.error("onDisconnected");
             }
         });
+        client.connect();
 
-        // 防止直接退出
+        // 防止测试时直接退出
+        while (true) {
+            synchronized (lock) {
+                lock.wait();
+            }
+        }
+    }
+
+    @Test
+    void disableAutoReconnect() throws InterruptedException {
+        BilibiliLiveChatClientConfig config = BilibiliLiveChatClientConfig.builder()
+                .autoReconnect(false)
+                .roomId(7777)
+                .build();
+
+        client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
+            @Override
+            public void onConnected() {
+                log.error("onConnected");
+                log.info("连接成功，10s后将断开连接");
+                client.getWorkerGroup().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        client.disconnect();
+                    }
+                }, 10, TimeUnit.SECONDS);
+            }
+
+            @Override
+            public void onDisconnected(BilibiliConnectionHandler bilibiliConnectionHandler) {
+                log.error("onDisconnected");
+                client.destroy();
+            }
+        });
+        client.connect();
+
+        // 防止测试时直接退出
         while (true) {
             synchronized (lock) {
                 lock.wait();
