@@ -48,9 +48,11 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
     @Test
     void autoReconnect() throws Exception {
+        String cookie = System.getenv("cookie");
+        log.error("cookie: {}",cookie);
         BilibiliLiveChatClientConfig config = BilibiliLiveChatClientConfig.builder()
                 // TODO 浏览器Cookie
-                .cookie("")
+                .cookie(cookie)
                 .roomId(7777)
                 .build();
 
