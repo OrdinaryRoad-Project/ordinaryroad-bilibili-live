@@ -26,25 +26,18 @@ package tech.ordinaryroad.bilibili.live.netty.handler;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.*;
-import io.netty.channel.socket.ChannelInputShutdownReadComplete;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
-import io.netty.handler.ssl.SslCloseCompletionEvent;
-import io.netty.handler.ssl.SslHandshakeCompletionEvent;
-import io.netty.util.concurrent.ScheduledFuture;
 import lombok.extern.slf4j.Slf4j;
-import tech.ordinaryroad.bilibili.live.client.BilibiliLiveChatClient;
-import tech.ordinaryroad.bilibili.live.config.BilibiliLiveChatClientConfig;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
-import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
 import tech.ordinaryroad.bilibili.live.msg.base.BaseBilibiliMsg;
-import tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory;
 import tech.ordinaryroad.bilibili.live.util.BilibiliCodecUtil;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -66,6 +59,7 @@ public class BilibiliBinaryFrameHandler extends SimpleChannelInboundHandler<Bina
         ByteBuf byteBuf = message.content();
         List<BaseBilibiliMsg> msgList = BilibiliCodecUtil.decode(byteBuf);
         for (BaseBilibiliMsg msg : msgList) {
+            // log.debug("收到消息 {}", msg.getClass());
             if (msg instanceof SendSmsReplyMsg sendSmsReplyMsg) {
                 CmdEnum cmd = sendSmsReplyMsg.getCmdEnum();
                 if (cmd == null) {
