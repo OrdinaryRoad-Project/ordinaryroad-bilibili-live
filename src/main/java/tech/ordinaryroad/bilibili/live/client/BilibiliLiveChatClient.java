@@ -200,19 +200,25 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
 
     @Override
     public void onConnected() {
-        this.connectionListener.onConnected();
+        if (this.connectionListener != null) {
+            this.connectionListener.onConnected();
+        }
     }
 
     @Override
     public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
         tryReconnect();
-        this.connectionListener.onConnectFailed(connectionHandler);
+        if (this.connectionListener != null) {
+            this.connectionListener.onConnectFailed(connectionHandler);
+        }
     }
 
     @Override
     public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
         tryReconnect();
-        this.connectionListener.onDisconnected(connectionHandler);
+        if (this.connectionListener != null) {
+            this.connectionListener.onDisconnected(connectionHandler);
+        }
     }
 
     private void tryReconnect() {
