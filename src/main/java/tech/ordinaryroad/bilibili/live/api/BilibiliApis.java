@@ -32,6 +32,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +44,7 @@ import java.util.function.Supplier;
  * @author mjz
  * @date 2023/5/5
  */
+@Slf4j
 public class BilibiliApis {
 
     public static String cookies;
@@ -115,11 +117,15 @@ public class BilibiliApis {
     public static String getCookie(String name, Supplier<String> defaultValue) {
         if (cookieMap == null) {
             Map<String, String> map = new HashMap<>();
-            if (StrUtil.isNotBlank(cookies)){
-                String[] split = cookies.split("; ");
-                for (String s : split) {
-                    String[] split1 = s.split("=");
-                    map.put(split1[0], split1[1]);
+            if (StrUtil.isNotBlank(cookies) && !StrUtil.isNullOrUndefined(cookies)) {
+                try {
+                    String[] split = cookies.split("; ");
+                    for (String s : split) {
+                        String[] split1 = s.split("=");
+                        map.put(split1[0], split1[1]);
+                    }
+                } catch (Exception e) {
+                    log.error("cookie解析失败 " + cookies, e);
                 }
             }
             cookieMap = map;
