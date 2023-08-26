@@ -93,4 +93,4 @@ private void sendAuth() {
 - [哔哩哔哩直播开放文档 (bilibili.com) 长连CMD说明](https://open-live.bilibili.com/document/f9ce25be-312e-1f4a-85fd-fef21f1637f8)
 - [bilibili直播间接收监听和发送弹幕api\_b站弹幕api\_NPC\_P的博客-CSDN博客](https://blog.csdn.net/npccccccccc/article/details/124576745)
 - [感谢大佬，B站弹幕也能抓取啦\~ - 51Testing软件测试网-软件测试人的精神家园](http://www.51testing.com/mobile/view.php?itemid=4475284)
-
+- [Bilibili-Live-API/API.WebSocket.md at master · lovelyyoshino/Bilibili-Live-API · GitHub](https://github.com/lovelyyoshino/Bilibili-Live-API/blob/master/API.WebSocket.md)
