@@ -25,6 +25,8 @@
 package tech.ordinaryroad.bilibili.live.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import tech.ordinaryroad.bilibili.live.config.BilibiliLiveChatClientConfig;
@@ -92,13 +94,13 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
             @Override
             public void onConnected() {
                 log.error("onConnected");
-//                log.info("连接成功，10s后将断开连接，模拟自动重连");
-//                client.getWorkerGroup().schedule(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        client.disconnect();
-//                    }
-//                }, 10, TimeUnit.SECONDS);
+                log.info("连接成功，10s后将断开连接，模拟自动重连");
+                client.getWorkerGroup().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        client.disconnect();
+                    }
+                }, 10, TimeUnit.SECONDS);
             }
 
             @Override
@@ -245,6 +247,57 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
             }
         });
         client.connect();
+
+        // 防止测试时直接退出
+        while (true) {
+            synchronized (lock) {
+                lock.wait();
+            }
+        }
+    }
+
+    @Test
+    void cancelReconnect() throws InterruptedException {
+        String cookie = System.getenv("cookie");
+        log.error("cookie: {}", cookie);
+        BilibiliLiveChatClientConfig config = BilibiliLiveChatClientConfig.builder()
+                // TODO 浏览器Cookie
+                .cookie(cookie)
+                .roomId(7777)
+                .build();
+
+        client = new BilibiliLiveChatClient(config, new IBilibiliSendSmsReplyMsgListener() {
+            @Override
+            public void onDanmuMsg(SendSmsReplyMsg msg) {
+                JsonNode info = msg.getInfo();
+                JsonNode jsonNode1 = info.get(1);
+                String danmuText = jsonNode1.asText();
+                JsonNode jsonNode2 = info.get(2);
+                Long uid = jsonNode2.get(0).asLong();
+                String uname = jsonNode2.get(1).asText();
+                log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
+            }
+        });
+        client.connect();
+
+        log.error("10s后断开连接，并关闭自动重连");
+        client.getWorkerGroup().schedule(() -> {
+            client.disconnect(true);
+            log.error("断开连接，10s后手动进行重新连接");
+            client.getWorkerGroup().schedule(() -> {
+                client.connect(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture future) throws Exception {
+                        if (future.isSuccess()) {
+                            log.error("手动重新连接成功，10s后断开链接，演示自动重连");
+                            client.getWorkerGroup().schedule(() -> {
+                                client.disconnect();
+                            }, 10, TimeUnit.SECONDS);
+                        }
+                    }
+                });
+            }, 10, TimeUnit.SECONDS);
+        }, 10, TimeUnit.SECONDS);
 
         // 防止测试时直接退出
         while (true) {
