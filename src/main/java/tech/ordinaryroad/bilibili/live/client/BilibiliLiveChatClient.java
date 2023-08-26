@@ -76,7 +76,7 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
     private BilibiliConnectionHandler connectionHandler;
     private Channel channel;
     private volatile boolean initialized = false;
-    private volatile boolean connected = false;
+    private volatile boolean cancelReconnect = false;
 
     public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener msgListener, IBilibiliConnectionListener connectionListener, EventLoopGroup workerGroup) {
         this.config = config;
@@ -158,6 +158,9 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
     }
 
     public void connect(GenericFutureListener<ChannelFuture> genericFutureListener) {
+        if (this.cancelReconnect) {
+            this.cancelReconnect = false;
+        }
         this.initCheck();
         this.bootstrap.connect().addListener((ChannelFutureListener) connectFuture -> {
             if (genericFutureListener != null) {
@@ -183,11 +186,21 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
         this.connect(null);
     }
 
-    public void disconnect() {
+    /**
+     * 手动断开连接
+     *
+     * @param cancelReconnect 取消本次的自动重连（如果启用自动重连）
+     */
+    public void disconnect(boolean cancelReconnect) {
+        this.cancelReconnect = cancelReconnect;
         if (this.channel == null) {
             return;
         }
         this.channel.close();
+    }
+
+    public void disconnect() {
+        this.disconnect(false);
     }
 
     public void destroy() {
@@ -222,6 +235,10 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
     }
 
     private void tryReconnect() {
+        if (this.cancelReconnect) {
+            this.cancelReconnect = false;
+            return;
+        }
         if (!this.config.isAutoReconnect()) {
             return;
         }

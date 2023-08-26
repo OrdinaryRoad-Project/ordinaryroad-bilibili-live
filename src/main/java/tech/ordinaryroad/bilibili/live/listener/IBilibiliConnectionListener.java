@@ -24,7 +24,6 @@
 
 package tech.ordinaryroad.bilibili.live.listener;
 
-import io.netty.channel.ChannelFuture;
 import tech.ordinaryroad.bilibili.live.client.BilibiliLiveChatClient;
 import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliConnectionHandler;
 
