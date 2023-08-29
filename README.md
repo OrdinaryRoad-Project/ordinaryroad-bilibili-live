@@ -10,6 +10,7 @@
 - Feature 2: 支持房间短id
 - Feature 3: 支持自动重连
 - Feature 4: 支持Cookie
+- Feature 5: 支持同时监听多个直播间
 
 > ☑️ ✅ ToDo
 > List: https://github.com/users/1962247851/projects/1/views/1?filterQuery=repo%3A%22OrdinaryRoad-Project%2Fordinaryroad-bilibili-live%22
@@ -61,19 +62,14 @@ client.connect();
 
 重写`IBilibiliSendSmsReplyMsgListener`中的方法，进行处理业务逻辑（耗时操作可能需要异步）
 
-修改创建认证包方法的参数后，运行查看效果
-
-> 创建发送认证包
+> 修改相关参数后，运行查看效果
 ```java
-private void sendAuth() {
-    log.debug("发送认证包");
-    channel.writeAndFlush(
-            // TODO 修改版本
-            BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                    // TODO 修改房间ID
-                    .createAuth(7777)
-    );
-}
+    // TODO 修改房间ID
+    long roomId = 7777;
+    // TODO 设置浏览器Cookie
+    String cookie = System.getenv("cookie");
+    // TODO 修改版本
+    ProtoverEnum protover = ProtoverEnum.NORMAL_BROTLI;
 ```
 
 > 控制台输出示例
