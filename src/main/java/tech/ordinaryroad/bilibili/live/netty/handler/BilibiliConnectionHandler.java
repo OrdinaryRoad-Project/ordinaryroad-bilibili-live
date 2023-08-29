@@ -53,6 +53,9 @@ import java.util.concurrent.TimeUnit;
 @ChannelHandler.Sharable
 public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
 
+    private final long roomId;
+    private final ProtoverEnum protover;
+    private String cookie;
     private final WebSocketClientHandshaker handshaker;
     @Getter
     private ChannelPromise handshakeFuture;
@@ -62,21 +65,47 @@ public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullH
      * 客户端发送心跳包
      */
     private ScheduledFuture<?> scheduledFuture = null;
+    private final BilibiliWebSocketFrameFactory webSocketFrameFactory;
 
     public BilibiliConnectionHandler(WebSocketClientHandshaker handshaker, IBilibiliConnectionListener listener, BilibiliLiveChatClient client) {
         this.handshaker = handshaker;
         this.client = client;
         this.listener = listener;
+        this.roomId = client.getConfig().getRoomId();
+        this.protover = client.getConfig().getProtover();
+        this.cookie = client.getConfig().getCookie();
+        this.webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId, protover, cookie);
     }
 
-    public BilibiliConnectionHandler(WebSocketClientHandshaker handshaker, IBilibiliConnectionListener listener) {
-        this(handshaker, listener, null);
+    public BilibiliConnectionHandler(WebSocketClientHandshaker handshaker, IBilibiliConnectionListener listener, long roomId, ProtoverEnum protover, String cookie) {
+        this.handshaker = handshaker;
+        this.client = null;
+        this.listener = listener;
+        this.roomId = roomId;
+        this.protover = protover;
+        this.cookie = cookie;
+        this.webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId, protover, cookie);
     }
 
-    public BilibiliConnectionHandler(WebSocketClientHandshaker handshaker) {
-        this(handshaker, null, null);
+    public BilibiliConnectionHandler(WebSocketClientHandshaker handshaker, IBilibiliConnectionListener listener, long roomId, ProtoverEnum protover) {
+        this.handshaker = handshaker;
+        this.client = null;
+        this.listener = listener;
+        this.roomId = roomId;
+        this.protover = protover;
+        this.cookie = null;
+        this.webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId, protover);
     }
 
+    public BilibiliConnectionHandler(WebSocketClientHandshaker handshaker, long roomId, ProtoverEnum protover) {
+        this.handshaker = handshaker;
+        this.client = null;
+        this.listener = null;
+        this.roomId = roomId;
+        this.protover = protover;
+        this.cookie = null;
+        this.webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId, protover);
+    }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
@@ -111,8 +140,7 @@ public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullH
             scheduledFuture = ctx.executor().scheduleAtFixedRate(() -> {
                 log.debug("发送心跳包");
                 ctx.writeAndFlush(
-                        BilibiliWebSocketFrameFactory.getInstance(getProtoverEnum())
-                                .createHeartbeat()
+                        webSocketFrameFactory.createHeartbeat()
                 ).addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
                         log.debug("心跳包发送完成");
@@ -143,10 +171,6 @@ public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullH
             scheduledFuture.cancel(true);
             scheduledFuture = null;
         }
-    }
-
-    private ProtoverEnum getProtoverEnum() {
-        return client == null ? ProtoverEnum.NORMAL_ZLIB : client.getConfig().getProtover();
     }
 
     private long getHeartbeatPeriod() {

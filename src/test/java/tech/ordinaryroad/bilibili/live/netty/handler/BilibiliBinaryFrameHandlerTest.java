@@ -60,13 +60,17 @@ class BilibiliBinaryFrameHandlerTest {
 
     static Object lock = new Object();
     Channel channel;
+    // TODO 修改房间ID
+    long roomId = 7777;
+    // TODO 设置浏览器Cookie
+    String cookie = System.getenv("cookie");
+    // TODO 修改版本
+    ProtoverEnum protover = ProtoverEnum.NORMAL_BROTLI;
+    BilibiliWebSocketFrameFactory webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId, protover, cookie);
 
     @Test
     public void example() throws InterruptedException {
-        // TODO 设置浏览器Cookie
-        String cookie = System.getenv("cookie");
         log.error("cookie: {}", cookie);
-        BilibiliApis.cookies = cookie;
 
         Bootstrap bootstrap = new Bootstrap();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -118,7 +122,7 @@ class BilibiliBinaryFrameHandlerTest {
                             null,
                             true,
                             new DefaultHttpHeaders()),
-                    connectionListener
+                    connectionListener, roomId, protover, cookie
             );
             BilibiliBinaryFrameHandler bilibiliHandler = new BilibiliBinaryFrameHandler(new IBilibiliSendSmsReplyMsgListener() {
                 @Override
@@ -251,11 +255,6 @@ class BilibiliBinaryFrameHandlerTest {
 
     private void sendAuth() {
         log.debug("发送认证包");
-        channel.writeAndFlush(
-                // TODO 修改版本
-                BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                        // TODO 修改房间ID
-                        .createAuth(7777)
-        );
+        channel.writeAndFlush(webSocketFrameFactory.createAuth());
     }
 }

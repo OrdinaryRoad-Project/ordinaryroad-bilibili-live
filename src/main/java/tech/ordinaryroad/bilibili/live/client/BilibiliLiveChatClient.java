@@ -77,12 +77,14 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
     private Channel channel;
     private volatile boolean initialized = false;
     private volatile boolean cancelReconnect = false;
+    private final BilibiliWebSocketFrameFactory webSocketFrameFactory;
 
     public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener msgListener, IBilibiliConnectionListener connectionListener, EventLoopGroup workerGroup) {
         this.config = config;
         this.msgListener = msgListener;
         this.connectionListener = connectionListener;
         this.workerGroup = workerGroup;
+        this.webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(this.config.getRoomId(), this.config.getProtover(), this.config.getCookie());
     }
 
     public BilibiliLiveChatClient(BilibiliLiveChatClientConfig config, IBilibiliSendSmsReplyMsgListener msgListener, IBilibiliConnectionListener connectionListener) {
@@ -101,7 +103,6 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
             return;
         }
         try {
-            BilibiliApis.cookies = config.getCookie();
             URI websocketUri = new URI("wss://broadcastlv.chat.bilibili.com:443/sub");
             this.connectionHandler = new BilibiliConnectionHandler(
                     WebSocketClientHandshakerFactory.newHandshaker(websocketUri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()),
@@ -173,7 +174,7 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
                 this.connectionHandler.getHandshakeFuture().addListener((ChannelFutureListener) handshakeFuture -> {
                     // 5s内认证
                     log.debug("发送认证包");
-                    send(BilibiliWebSocketFrameFactory.getInstance(this.config.getProtover()).createAuth(this.config.getRoomId()));
+                    send(webSocketFrameFactory.createAuth());
                 });
             } else {
                 log.error("连接建立失败", connectFuture.cause());

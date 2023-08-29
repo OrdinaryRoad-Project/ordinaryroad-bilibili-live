@@ -307,6 +307,64 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
         }
     }
 
+    @Test
+    void multiplyClient() throws InterruptedException {
+        BilibiliLiveChatClientConfig config1 = BilibiliLiveChatClientConfig.builder()
+                .autoReconnect(true)
+                .roomId(7777)
+                .protover(ProtoverEnum.NORMAL_ZLIB)
+                .build();
+
+        BilibiliLiveChatClient client1 = new BilibiliLiveChatClient(config1, this, new IBilibiliConnectionListener() {
+            @Override
+            public void onConnected() {
+                log.error("onConnected");
+            }
+
+            @Override
+            public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
+                log.error("onConnectFailed");
+            }
+
+            @Override
+            public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("onDisconnected");
+            }
+        });
+        client1.connect();
+
+        BilibiliLiveChatClientConfig config2 = BilibiliLiveChatClientConfig.builder()
+                .autoReconnect(true)
+                .roomId(6)
+                .protover(ProtoverEnum.NORMAL_BROTLI)
+                .build();
+
+        BilibiliLiveChatClient client2 = new BilibiliLiveChatClient(config2, this, new IBilibiliConnectionListener() {
+            @Override
+            public void onConnected() {
+                log.error("onConnected");
+            }
+
+            @Override
+            public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
+                log.error("onConnectFailed");
+            }
+
+            @Override
+            public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("onDisconnected");
+            }
+        });
+        client2.connect();
+
+        // 防止测试时直接退出
+        while (true) {
+            synchronized (lock) {
+                lock.wait();
+            }
+        }
+    }
+
     @Override
     public void onDanmuMsg(SendSmsReplyMsg msg) {
         JsonNode info = msg.getInfo();
