@@ -34,7 +34,9 @@ import tech.ordinaryroad.bilibili.live.msg.HeartbeatMsg;
 import tech.ordinaryroad.bilibili.live.netty.frame.AuthWebSocketFrame;
 import tech.ordinaryroad.bilibili.live.netty.frame.HeartbeatWebSocketFrame;
 import tech.ordinaryroad.bilibili.live.util.BilibiliCodecUtil;
+import tech.ordinaryroad.bilibili.live.util.OrLiveChatCookieUtil;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -43,30 +45,46 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BilibiliWebSocketFrameFactory {
 
-    private static final ConcurrentHashMap<ProtoverEnum, BilibiliWebSocketFrameFactory> CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, BilibiliWebSocketFrameFactory> CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * 浏览器地址中的房间id，支持短id
+     */
+    private final long roomId;
+    /**
+     * 浏览器cookie，仅用来维持登录状态
+     */
+    private String cookie;
     private final ProtoverEnum protover;
+
     private volatile static HeartbeatMsg heartbeatMsg;
 
-    public BilibiliWebSocketFrameFactory(ProtoverEnum protover) {
+    public BilibiliWebSocketFrameFactory(long roomId, ProtoverEnum protover, String cookie) {
+        this.roomId = roomId;
         this.protover = protover;
+        this.cookie = cookie;
     }
 
-    public synchronized static BilibiliWebSocketFrameFactory getInstance(ProtoverEnum protover) {
-        return CACHE.computeIfAbsent(protover, BilibiliWebSocketFrameFactory::new);
+    public synchronized static BilibiliWebSocketFrameFactory getInstance(long roomId, ProtoverEnum protover, String cookie) {
+        return CACHE.computeIfAbsent(roomId, aLong -> new BilibiliWebSocketFrameFactory(roomId, protover, cookie));
+    }
+
+    public synchronized static BilibiliWebSocketFrameFactory getInstance(long roomId, ProtoverEnum protover) {
+        return getInstance(roomId, protover, null);
     }
 
     /**
      * 创建认证包
      *
-     * @param roomId 浏览器地址中的房间id，支持短id
      * @return AuthWebSocketFrame
      */
-    public AuthWebSocketFrame createAuth(long roomId) {
+    public AuthWebSocketFrame createAuth() {
         try {
-            String buvid3 = BilibiliApis.getCookie("buvid3", () -> UUID.randomUUID().toString());
-            String uid = BilibiliApis.getCookie("DedeUserID", () -> "0");
-            JsonNode data = BilibiliApis.roomInit(roomId);
-            JsonNode danmuInfo = BilibiliApis.getDanmuInfo(roomId, 0);
+            Map<String, String> cookieMap = OrLiveChatCookieUtil.parseCookieString(cookie);
+            String buvid3 = OrLiveChatCookieUtil.getCookieByName(cookieMap, "buvid3", () -> UUID.randomUUID().toString());
+            String uid = OrLiveChatCookieUtil.getCookieByName(cookieMap, "DedeUserID", () -> "0");
+            JsonNode data = BilibiliApis.roomInit(roomId, cookie);
+            JsonNode danmuInfo = BilibiliApis.getDanmuInfo(roomId, 0, cookie);
             int realRoomId = data.get("room_id").asInt();
             AuthMsg authMsg = new AuthMsg(realRoomId, this.protover.getCode(), buvid3, danmuInfo.get("token").asText());
             authMsg.setUid(NumberUtil.parseLong(uid));

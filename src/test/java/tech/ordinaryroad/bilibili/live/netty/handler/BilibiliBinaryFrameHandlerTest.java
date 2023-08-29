@@ -40,7 +40,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import tech.ordinaryroad.bilibili.live.api.BilibiliApis;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
@@ -60,13 +59,17 @@ class BilibiliBinaryFrameHandlerTest {
 
     static Object lock = new Object();
     Channel channel;
+    // TODO 修改房间ID
+    long roomId = 7777;
+    // TODO 设置浏览器Cookie
+    String cookie = System.getenv("cookie");
+    // TODO 修改版本
+    ProtoverEnum protover = ProtoverEnum.NORMAL_BROTLI;
+    BilibiliWebSocketFrameFactory webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId, protover, cookie);
 
     @Test
     public void example() throws InterruptedException {
-        // TODO 设置浏览器Cookie
-        String cookie = System.getenv("cookie");
         log.error("cookie: {}", cookie);
-        BilibiliApis.cookies = cookie;
 
         Bootstrap bootstrap = new Bootstrap();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -74,7 +77,7 @@ class BilibiliBinaryFrameHandlerTest {
         IBilibiliConnectionListener connectionListener = new IBilibiliConnectionListener() {
 
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("连接成功，10s后将断开连接，模拟自动重连");
                 workerGroup.schedule(() -> {
                     channel.close();
@@ -118,22 +121,22 @@ class BilibiliBinaryFrameHandlerTest {
                             null,
                             true,
                             new DefaultHttpHeaders()),
-                    connectionListener
+                    connectionListener, roomId, protover, cookie
             );
             BilibiliBinaryFrameHandler bilibiliHandler = new BilibiliBinaryFrameHandler(new IBilibiliSendSmsReplyMsgListener() {
                 @Override
-                public void onDanmuMsg(SendSmsReplyMsg msg) {
+                public void onDanmuMsg(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                     JsonNode info = msg.getInfo();
                     JsonNode jsonNode1 = info.get(1);
                     String danmuText = jsonNode1.asText();
                     JsonNode jsonNode2 = info.get(2);
                     Long uid = jsonNode2.get(0).asLong();
                     String uname = jsonNode2.get(1).asText();
-                    log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
+                    log.info("{} 收到弹幕 {}({})：{}",binaryFrameHandler.getRoomId(), uname, uid, danmuText);
                 }
 
                 @Override
-                public void onSendGift(SendSmsReplyMsg msg) {
+                public void onSendGift(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                     JsonNode data = msg.getData();
                     String action = data.get("action").asText();
                     String giftName = data.get("giftName").asText();
@@ -144,19 +147,19 @@ class BilibiliBinaryFrameHandlerTest {
                 }
 
                 @Override
-                public void onEnterRoom(SendSmsReplyMsg msg) {
+                public void onEnterRoom(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                     log.debug("普通用户进入直播间 {}", msg.getData().get("uname").asText());
                 }
 
                 @Override
-                public void onEntryEffect(SendSmsReplyMsg msg) {
+                public void onEntryEffect(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                     JsonNode data = msg.getData();
                     String copyWriting = data.get("copy_writing").asText();
                     log.info("入场效果 {}", copyWriting);
                 }
 
                 @Override
-                public void onWatchedChange(SendSmsReplyMsg msg) {
+                public void onWatchedChange(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                     JsonNode data = msg.getData();
                     int num = data.get("num").asInt();
                     String textSmall = data.get("text_small").asText();
@@ -165,7 +168,7 @@ class BilibiliBinaryFrameHandlerTest {
                 }
 
                 @Override
-                public void onClickLike(SendSmsReplyMsg msg) {
+                public void onClickLike(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                     JsonNode data = msg.getData();
                     String uname = data.get("uname").asText();
                     String likeText = data.get("like_text").asText();
@@ -173,22 +176,22 @@ class BilibiliBinaryFrameHandlerTest {
                 }
 
                 @Override
-                public void onClickUpdate(SendSmsReplyMsg msg) {
+                public void onClickUpdate(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                     JsonNode data = msg.getData();
                     int clickCount = data.get("click_count").asInt();
                     log.debug("点赞数更新 {}", clickCount);
                 }
 
                 @Override
-                public void onOtherSendSmsReplyMsg(CmdEnum cmd, SendSmsReplyMsg msg) {
+                public void onOtherSendSmsReplyMsg(BilibiliBinaryFrameHandler binaryFrameHandler, CmdEnum cmd, SendSmsReplyMsg msg) {
                     log.info("其他消息 {}", cmd);
                 }
 
                 @Override
-                public void onUnknownCmd(String cmdString, SendSmsReplyMsg msg) {
+                public void onUnknownCmd(BilibiliBinaryFrameHandler binaryFrameHandler, String cmdString, SendSmsReplyMsg msg) {
                     log.info("未知cmd {}", cmdString);
                 }
-            });
+            }, roomId);
 
             //进行握手
             log.info("握手开始");
@@ -251,11 +254,6 @@ class BilibiliBinaryFrameHandlerTest {
 
     private void sendAuth() {
         log.debug("发送认证包");
-        channel.writeAndFlush(
-                // TODO 修改版本
-                BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                        // TODO 修改房间ID
-                        .createAuth(7777)
-        );
+        channel.writeAndFlush(webSocketFrameFactory.createAuth());
     }
 }

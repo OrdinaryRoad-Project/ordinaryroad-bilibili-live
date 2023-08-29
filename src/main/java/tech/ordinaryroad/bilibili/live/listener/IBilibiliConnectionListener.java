@@ -38,7 +38,7 @@ public interface IBilibiliConnectionListener {
     /**
      * 连接建立成功
      */
-    default void onConnected() {
+    default void onConnected(BilibiliConnectionHandler connectionHandler) {
         // ignore
     }
 
