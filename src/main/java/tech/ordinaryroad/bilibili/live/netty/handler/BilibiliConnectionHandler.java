@@ -53,12 +53,14 @@ import java.util.concurrent.TimeUnit;
 @ChannelHandler.Sharable
 public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
 
+    @Getter
     private final long roomId;
     private final ProtoverEnum protover;
     private String cookie;
     private final WebSocketClientHandshaker handshaker;
     @Getter
     private ChannelPromise handshakeFuture;
+    @Getter
     private final BilibiliLiveChatClient client;
     private final IBilibiliConnectionListener listener;
     /**
@@ -150,7 +152,7 @@ public class BilibiliConnectionHandler extends SimpleChannelInboundHandler<FullH
                 });
             }, getHeartbeatInitialDelay(), getHeartbeatPeriod(), TimeUnit.SECONDS);
             if (this.listener != null) {
-                listener.onConnected();
+                listener.onConnected(BilibiliConnectionHandler.this);
             }
         } else if (evt instanceof SslCloseCompletionEvent) {
             heartbeatCancel();

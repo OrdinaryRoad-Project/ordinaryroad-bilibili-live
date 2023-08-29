@@ -40,7 +40,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import tech.ordinaryroad.bilibili.live.api.BilibiliApis;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
 import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
@@ -78,7 +77,7 @@ class BilibiliBinaryFrameHandlerTest {
         IBilibiliConnectionListener connectionListener = new IBilibiliConnectionListener() {
 
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("连接成功，10s后将断开连接，模拟自动重连");
                 workerGroup.schedule(() -> {
                     channel.close();

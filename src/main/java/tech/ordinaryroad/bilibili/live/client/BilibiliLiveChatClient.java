@@ -213,9 +213,9 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
     }
 
     @Override
-    public void onConnected() {
+    public void onConnected(BilibiliConnectionHandler connectionHandler) {
         if (this.connectionListener != null) {
-            this.connectionListener.onConnected();
+            this.connectionListener.onConnected(connectionHandler);
         }
     }
 

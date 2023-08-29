@@ -92,7 +92,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
                 log.info("连接成功，10s后将断开连接，模拟自动重连");
                 client.getWorkerGroup().schedule(new Runnable() {
@@ -127,7 +127,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
                 log.info("连接成功，10s后将断开连接");
                 client.getWorkerGroup().schedule(new Runnable() {
@@ -164,7 +164,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
             }
 
@@ -198,7 +198,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
             }
 
@@ -232,7 +232,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
             }
 
@@ -317,18 +317,18 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         BilibiliLiveChatClient client1 = new BilibiliLiveChatClient(config1, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
-                log.error("onConnected");
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onConnected", connectionHandler.getRoomId());
             }
 
             @Override
             public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
-                log.error("onConnectFailed");
+                log.error("{} onConnectFailed", connectionHandler.getRoomId());
             }
 
             @Override
             public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
-                log.error("onDisconnected");
+                log.error("{} onDisconnected", connectionHandler.getRoomId());
             }
         });
         client1.connect();
@@ -341,18 +341,18 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         BilibiliLiveChatClient client2 = new BilibiliLiveChatClient(config2, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
-                log.error("onConnected");
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onConnected", connectionHandler.getRoomId());
             }
 
             @Override
             public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
-                log.error("onConnectFailed");
+                log.error("{} onConnectFailed", connectionHandler.getRoomId());
             }
 
             @Override
             public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
-                log.error("onDisconnected");
+                log.error("{} onDisconnected", connectionHandler.getRoomId());
             }
         });
         client2.connect();
