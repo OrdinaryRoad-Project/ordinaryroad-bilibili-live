@@ -24,10 +24,9 @@
 
 package tech.ordinaryroad.bilibili.live.listener;
 
-import io.netty.channel.ChannelHandlerContext;
-import tech.ordinaryroad.bilibili.live.client.BilibiliLiveChatClient;
 import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
+import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliBinaryFrameHandler;
 
 /**
  * @author mjz
@@ -38,8 +37,13 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 收到弹幕
      *
-     * @param msg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param msg                SendSmsReplyMsg
      */
+    default void onDanmuMsg(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+        this.onDanmuMsg(msg);
+    }
+
     default void onDanmuMsg(SendSmsReplyMsg msg) {
         // ignore
     }
@@ -47,8 +51,13 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 收到礼物
      *
-     * @param msg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param msg                SendSmsReplyMsg
      */
+    default void onSendGift(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+        this.onSendGift(msg);
+    }
+
     default void onSendGift(SendSmsReplyMsg msg) {
         // ignore
     }
@@ -56,8 +65,13 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 普通用户进入直播间
      *
-     * @param msg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param msg                SendSmsReplyMsg
      */
+    default void onEnterRoom(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+        this.onEnterRoom(msg);
+    }
+
     default void onEnterRoom(SendSmsReplyMsg msg) {
         // ignore
     }
@@ -65,8 +79,13 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 入场效果（高能用户）
      *
-     * @param sendSmsReplyMsg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param sendSmsReplyMsg    SendSmsReplyMsg
      */
+    default void onEntryEffect(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg sendSmsReplyMsg) {
+        this.onEntryEffect(sendSmsReplyMsg);
+    }
+
     default void onEntryEffect(SendSmsReplyMsg sendSmsReplyMsg) {
         // ignore
     }
@@ -74,8 +93,13 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 观看人数变化
      *
-     * @param msg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param msg                SendSmsReplyMsg
      */
+    default void onWatchedChange(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+        this.onWatchedChange(msg);
+    }
+
     default void onWatchedChange(SendSmsReplyMsg msg) {
         // ignore
     }
@@ -83,8 +107,13 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 为主播点赞
      *
-     * @param msg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param msg                SendSmsReplyMsg
      */
+    default void onClickLike(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+        this.onClickLike(msg);
+    }
+
     default void onClickLike(SendSmsReplyMsg msg) {
         // ignore
     }
@@ -92,8 +121,13 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 点赞数更新
      *
-     * @param msg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param msg                SendSmsReplyMsg
      */
+    default void onClickUpdate(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+        this.onClickUpdate(msg);
+    }
+
     default void onClickUpdate(SendSmsReplyMsg msg) {
         // ignore
     }
@@ -101,9 +135,14 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 其他消息
      *
-     * @param cmd CmdEnum
-     * @param msg SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param cmd                CmdEnum
+     * @param msg                SendSmsReplyMsg
      */
+    default void onOtherSendSmsReplyMsg(BilibiliBinaryFrameHandler binaryFrameHandler, CmdEnum cmd, SendSmsReplyMsg msg) {
+        this.onOtherSendSmsReplyMsg(cmd, msg);
+    }
+
     default void onOtherSendSmsReplyMsg(CmdEnum cmd, SendSmsReplyMsg msg) {
         // ignore
     }
@@ -111,9 +150,14 @@ public interface IBilibiliSendSmsReplyMsgListener {
     /**
      * 未知cmd
      *
-     * @param cmdString 实际收到的cmd字符串
-     * @param msg       SendSmsReplyMsg
+     * @param binaryFrameHandler BilibiliBinaryFrameHandler
+     * @param cmdString          实际收到的cmd字符串
+     * @param msg                SendSmsReplyMsg
      */
+    default void onUnknownCmd(BilibiliBinaryFrameHandler binaryFrameHandler, String cmdString, SendSmsReplyMsg msg) {
+        this.onUnknownCmd(cmdString, msg);
+    }
+
     default void onUnknownCmd(String cmdString, SendSmsReplyMsg msg) {
         // ignore
     }

@@ -108,7 +108,7 @@ public class BilibiliLiveChatClient implements IBilibiliConnectionListener {
                     WebSocketClientHandshakerFactory.newHandshaker(websocketUri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()),
                     BilibiliLiveChatClient.this, BilibiliLiveChatClient.this
             );
-            this.binaryFrameHandler = new BilibiliBinaryFrameHandler(this.msgListener);
+            this.binaryFrameHandler = new BilibiliBinaryFrameHandler(this.msgListener, BilibiliLiveChatClient.this);
             SslContext sslCtx = SslContextBuilder.forClient().build();
 
             this.bootstrap.group(this.workerGroup)
