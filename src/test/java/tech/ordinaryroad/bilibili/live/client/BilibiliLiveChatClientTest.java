@@ -62,6 +62,8 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
         client = new BilibiliLiveChatClient(config, new IBilibiliSendSmsReplyMsgListener() {
             @Override
             public void onDanmuMsg(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+                IBilibiliSendSmsReplyMsgListener.super.onDanmuMsg(binaryFrameHandler, msg);
+
                 JsonNode info = msg.getInfo();
                 JsonNode jsonNode1 = info.get(1);
                 String danmuText = jsonNode1.asText();
@@ -69,6 +71,17 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
                 Long uid = jsonNode2.get(0).asLong();
                 String uname = jsonNode2.get(1).asText();
                 log.info("{} 收到弹幕 {}({})：{}", binaryFrameHandler.getRoomId(), uname, uid, danmuText);
+            }
+
+            @Override
+            public void onDanmuMsg(SendSmsReplyMsg msg) {
+                JsonNode info = msg.getInfo();
+                JsonNode jsonNode1 = info.get(1);
+                String danmuText = jsonNode1.asText();
+                JsonNode jsonNode2 = info.get(2);
+                Long uid = jsonNode2.get(0).asLong();
+                String uname = jsonNode2.get(1).asText();
+                log.debug("收到弹幕 {}({})：{}", uname, uid, danmuText);
             }
         });
         client.connect();
