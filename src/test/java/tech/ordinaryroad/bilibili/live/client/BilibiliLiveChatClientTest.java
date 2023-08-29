@@ -34,6 +34,7 @@ import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
 import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
 import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
+import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliBinaryFrameHandler;
 import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliConnectionHandler;
 
 import java.util.concurrent.TimeUnit;
@@ -60,6 +61,19 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, new IBilibiliSendSmsReplyMsgListener() {
             @Override
+            public void onDanmuMsg(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
+                IBilibiliSendSmsReplyMsgListener.super.onDanmuMsg(binaryFrameHandler, msg);
+
+                JsonNode info = msg.getInfo();
+                JsonNode jsonNode1 = info.get(1);
+                String danmuText = jsonNode1.asText();
+                JsonNode jsonNode2 = info.get(2);
+                Long uid = jsonNode2.get(0).asLong();
+                String uname = jsonNode2.get(1).asText();
+                log.info("{} 收到弹幕 {}({})：{}", binaryFrameHandler.getRoomId(), uname, uid, danmuText);
+            }
+
+            @Override
             public void onDanmuMsg(SendSmsReplyMsg msg) {
                 JsonNode info = msg.getInfo();
                 JsonNode jsonNode1 = info.get(1);
@@ -67,7 +81,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
                 JsonNode jsonNode2 = info.get(2);
                 Long uid = jsonNode2.get(0).asLong();
                 String uname = jsonNode2.get(1).asText();
-                log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
+                log.debug("收到弹幕 {}({})：{}", uname, uid, danmuText);
             }
         });
         client.connect();
@@ -92,7 +106,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
                 log.info("连接成功，10s后将断开连接，模拟自动重连");
                 client.getWorkerGroup().schedule(new Runnable() {
@@ -127,7 +141,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
                 log.info("连接成功，10s后将断开连接");
                 client.getWorkerGroup().schedule(new Runnable() {
@@ -164,7 +178,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
             }
 
@@ -198,7 +212,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
             }
 
@@ -232,7 +246,7 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, this, new IBilibiliConnectionListener() {
             @Override
-            public void onConnected() {
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
                 log.error("onConnected");
             }
 
@@ -268,14 +282,14 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
 
         client = new BilibiliLiveChatClient(config, new IBilibiliSendSmsReplyMsgListener() {
             @Override
-            public void onDanmuMsg(SendSmsReplyMsg msg) {
+            public void onDanmuMsg(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
                 JsonNode info = msg.getInfo();
                 JsonNode jsonNode1 = info.get(1);
                 String danmuText = jsonNode1.asText();
                 JsonNode jsonNode2 = info.get(2);
                 Long uid = jsonNode2.get(0).asLong();
                 String uname = jsonNode2.get(1).asText();
-                log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
+                log.info("{} 收到弹幕 {}({})：{}", binaryFrameHandler.getRoomId(), uname, uid, danmuText);
             }
         });
         client.connect();
@@ -307,14 +321,72 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
         }
     }
 
+    @Test
+    void multiplyClient() throws InterruptedException {
+        BilibiliLiveChatClientConfig config1 = BilibiliLiveChatClientConfig.builder()
+                .autoReconnect(true)
+                .roomId(7777)
+                .protover(ProtoverEnum.NORMAL_ZLIB)
+                .build();
+
+        BilibiliLiveChatClient client1 = new BilibiliLiveChatClient(config1, this, new IBilibiliConnectionListener() {
+            @Override
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onConnected", connectionHandler.getRoomId());
+            }
+
+            @Override
+            public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onConnectFailed", connectionHandler.getRoomId());
+            }
+
+            @Override
+            public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onDisconnected", connectionHandler.getRoomId());
+            }
+        });
+        client1.connect();
+
+        BilibiliLiveChatClientConfig config2 = BilibiliLiveChatClientConfig.builder()
+                .autoReconnect(true)
+                .roomId(6)
+                .protover(ProtoverEnum.NORMAL_BROTLI)
+                .build();
+
+        BilibiliLiveChatClient client2 = new BilibiliLiveChatClient(config2, this, new IBilibiliConnectionListener() {
+            @Override
+            public void onConnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onConnected", connectionHandler.getRoomId());
+            }
+
+            @Override
+            public void onConnectFailed(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onConnectFailed", connectionHandler.getRoomId());
+            }
+
+            @Override
+            public void onDisconnected(BilibiliConnectionHandler connectionHandler) {
+                log.error("{} onDisconnected", connectionHandler.getRoomId());
+            }
+        });
+        client2.connect();
+
+        // 防止测试时直接退出
+        while (true) {
+            synchronized (lock) {
+                lock.wait();
+            }
+        }
+    }
+
     @Override
-    public void onDanmuMsg(SendSmsReplyMsg msg) {
+    public void onDanmuMsg(BilibiliBinaryFrameHandler binaryFrameHandler, SendSmsReplyMsg msg) {
         JsonNode info = msg.getInfo();
         JsonNode jsonNode1 = info.get(1);
         String danmuText = jsonNode1.asText();
         JsonNode jsonNode2 = info.get(2);
         Long uid = jsonNode2.get(0).asLong();
         String uname = jsonNode2.get(1).asText();
-        log.info("收到弹幕 {}({})：{}", uname, uid, danmuText);
+        log.info("{} 收到弹幕 {}({})：{}", binaryFrameHandler.getRoomId(), uname, uid, danmuText);
     }
 }

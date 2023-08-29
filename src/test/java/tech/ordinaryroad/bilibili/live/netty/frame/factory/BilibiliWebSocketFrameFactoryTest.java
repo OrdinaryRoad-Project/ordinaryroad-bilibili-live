@@ -36,10 +36,10 @@ class BilibiliWebSocketFrameFactoryTest {
 
     @Test
     void createAuth() {
-        Assertions.assertThrows(RuntimeException.class, () -> BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                .createAuth(123));
+        Assertions.assertThrows(RuntimeException.class, () -> BilibiliWebSocketFrameFactory.getInstance(0, ProtoverEnum.NORMAL_ZLIB)
+                .createAuth());
 
-        Assertions.assertNotNull(BilibiliWebSocketFrameFactory.getInstance(ProtoverEnum.NORMAL_ZLIB)
-                .createAuth(6));
+        Assertions.assertNotNull(BilibiliWebSocketFrameFactory.getInstance(6, ProtoverEnum.NORMAL_ZLIB)
+                .createAuth());
     }
 }
