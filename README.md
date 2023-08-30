@@ -3,7 +3,8 @@
 ![license](https://img.shields.io/github/license/1962247851/ordinaryroad-bilibili-live) ![release](https://img.shields.io/github/v/release/1962247851/ordinaryroad-bilibili-live) ![Maven Central](https://img.shields.io/maven-central/v/tech.ordinaryroad.bilibili.live/ordinaryroad-bilibili-live)
 
 使用Netty来连接B站直播间的弹幕信息流Websocket接口
-> 项目重构中，现支持Bilibili、Douyu，传送门：[ordinaryroad-live-chat-client](https://github.com/OrdinaryRoad-Project/ordinaryroad-live-chat-client)
+
+## ⚠️⚠️⚠️ 项目已重构（API不变），已支持Bilibili、Douyu，传送门：[ordinaryroad-live-chat-client](https://github.com/OrdinaryRoad-Project/ordinaryroad-live-chat-client)
 
 - Feature 0: Netty
 - Feature 1: 消息中的未知属性统一放到单独的MAP中
