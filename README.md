@@ -4,7 +4,7 @@
 
 使用Netty来连接B站直播间的弹幕信息流Websocket接口
 
-## ⚠️⚠️⚠️ 项目已重构（API不变），已支持Bilibili、Douyu，传送门：[ordinaryroad-live-chat-client](https://github.com/OrdinaryRoad-Project/ordinaryroad-live-chat-client)
+## ⚠️⚠️⚠️ 项目已重构（API不变），已支持Bilibili、Douyu，传送门：[ordinaryroad-live-chat-client](https://github.com/OrdinaryRoad-Project/ordinaryroad-live-chat-client)，有问题欢迎[提交issuse](https://github.com/OrdinaryRoad-Project/ordinaryroad-live-chat-client/issues)，觉得有用的话可以点个小星星⭐️鼓励一下，感谢
 
 - Feature 0: Netty
 - Feature 1: 消息中的未知属性统一放到单独的MAP中
