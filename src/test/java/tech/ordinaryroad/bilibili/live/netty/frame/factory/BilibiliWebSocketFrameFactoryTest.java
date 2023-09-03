@@ -26,7 +26,8 @@ package tech.ordinaryroad.bilibili.live.netty.frame.factory;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
+import tech.ordinaryroad.live.chat.client.bilibili.constant.ProtoverEnum;
+import tech.ordinaryroad.live.chat.client.bilibili.netty.frame.factory.BilibiliWebSocketFrameFactory;
 
 /**
  * @author mjz
@@ -36,10 +37,10 @@ class BilibiliWebSocketFrameFactoryTest {
 
     @Test
     void createAuth() {
-        Assertions.assertThrows(RuntimeException.class, () -> BilibiliWebSocketFrameFactory.getInstance(0, ProtoverEnum.NORMAL_ZLIB)
-                .createAuth());
+        Assertions.assertThrows(RuntimeException.class, () -> BilibiliWebSocketFrameFactory.getInstance(0)
+                .createAuth(ProtoverEnum.NORMAL_ZLIB,null));
 
-        Assertions.assertNotNull(BilibiliWebSocketFrameFactory.getInstance(6, ProtoverEnum.NORMAL_ZLIB)
-                .createAuth());
+        Assertions.assertNotNull(BilibiliWebSocketFrameFactory.getInstance(6)
+                .createAuth(ProtoverEnum.NORMAL_BROTLI,null));
     }
 }

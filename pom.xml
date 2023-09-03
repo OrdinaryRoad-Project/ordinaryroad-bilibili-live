@@ -29,7 +29,7 @@
 
     <groupId>tech.ordinaryroad.bilibili.live</groupId>
     <artifactId>ordinaryroad-bilibili-live</artifactId>
-    <version>0.0.8</version>
+    <version>0.0.9</version>
     <packaging>jar</packaging>
     <name>ordinaryroad-bilibili-live</name>
     <description>使用Netty来连接B站直播间的弹幕信息流Websocket接口</description>
@@ -61,44 +61,17 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 
-        <brotli4j.version>1.12.0</brotli4j.version>
-        <jackson-databind.version>2.15.2</jackson-databind.version>
-        <hutool-all.version>5.8.21</hutool-all.version>
-        <netty-all.version>4.1.96.Final</netty-all.version>
-        <logback-classic.version>1.4.11</logback-classic.version>
+        <ordinaryroad-live-chat-client.version>0.0.5</ordinaryroad-live-chat-client.version>
         <lombok.version>1.18.28</lombok.version>
         <junit-jupiter.version>5.10.0</junit-jupiter.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.aayushatharva.brotli4j</groupId>
-            <artifactId>brotli4j</artifactId>
-            <version>${brotli4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-databind.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>${hutool-all.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>${netty-all.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback-classic.version}</version>
+            <groupId>tech.ordinaryroad</groupId>
+            <artifactId>live-chat-client-bilibili</artifactId>
+            <!-- 参考github release版本，不需要前缀`v` -->
+            <version>${ordinaryroad-live-chat-client.version}</version>
         </dependency>
 
         <dependency>

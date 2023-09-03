@@ -25,17 +25,16 @@
 package tech.ordinaryroad.bilibili.live.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import tech.ordinaryroad.bilibili.live.config.BilibiliLiveChatClientConfig;
-import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
-import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
-import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
-import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
-import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliBinaryFrameHandler;
-import tech.ordinaryroad.bilibili.live.netty.handler.BilibiliConnectionHandler;
+import tech.ordinaryroad.live.chat.client.bilibili.client.BilibiliLiveChatClient;
+import tech.ordinaryroad.live.chat.client.bilibili.config.BilibiliLiveChatClientConfig;
+import tech.ordinaryroad.live.chat.client.bilibili.constant.ProtoverEnum;
+import tech.ordinaryroad.live.chat.client.bilibili.listener.IBilibiliConnectionListener;
+import tech.ordinaryroad.live.chat.client.bilibili.listener.IBilibiliSendSmsReplyMsgListener;
+import tech.ordinaryroad.live.chat.client.bilibili.msg.SendSmsReplyMsg;
+import tech.ordinaryroad.live.chat.client.bilibili.netty.handler.BilibiliBinaryFrameHandler;
+import tech.ordinaryroad.live.chat.client.bilibili.netty.handler.BilibiliConnectionHandler;
 
 import java.util.concurrent.TimeUnit;
 
@@ -299,16 +298,11 @@ class BilibiliLiveChatClientTest implements IBilibiliSendSmsReplyMsgListener {
             client.disconnect(true);
             log.error("断开连接，10s后手动进行重新连接");
             client.getWorkerGroup().schedule(() -> {
-                client.connect(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception {
-                        if (future.isSuccess()) {
-                            log.error("手动重新连接成功，10s后断开链接，演示自动重连");
-                            client.getWorkerGroup().schedule(() -> {
-                                client.disconnect();
-                            }, 10, TimeUnit.SECONDS);
-                        }
-                    }
+                client.connect(() -> {
+                    log.error("手动重新连接成功，10s后断开链接，演示自动重连");
+                    client.getWorkerGroup().schedule(() -> {
+                        client.disconnect();
+                    }, 10, TimeUnit.SECONDS);
                 });
             }, 10, TimeUnit.SECONDS);
         }, 10, TimeUnit.SECONDS);
