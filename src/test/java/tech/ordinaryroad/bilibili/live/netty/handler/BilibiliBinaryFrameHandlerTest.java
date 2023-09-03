@@ -40,12 +40,16 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import tech.ordinaryroad.bilibili.live.constant.CmdEnum;
-import tech.ordinaryroad.bilibili.live.constant.ProtoverEnum;
-import tech.ordinaryroad.bilibili.live.listener.IBilibiliConnectionListener;
-import tech.ordinaryroad.bilibili.live.listener.IBilibiliSendSmsReplyMsgListener;
-import tech.ordinaryroad.bilibili.live.msg.SendSmsReplyMsg;
-import tech.ordinaryroad.bilibili.live.netty.frame.factory.BilibiliWebSocketFrameFactory;
+import tech.ordinaryroad.live.chat.client.bilibili.constant.BilibiliCmdEnum;
+import tech.ordinaryroad.live.chat.client.bilibili.constant.ProtoverEnum;
+import tech.ordinaryroad.live.chat.client.bilibili.listener.IBilibiliSendSmsReplyMsgListener;
+import tech.ordinaryroad.live.chat.client.bilibili.msg.SendSmsReplyMsg;
+import tech.ordinaryroad.live.chat.client.bilibili.netty.frame.factory.BilibiliWebSocketFrameFactory;
+import tech.ordinaryroad.live.chat.client.bilibili.netty.handler.BilibiliBinaryFrameHandler;
+import tech.ordinaryroad.live.chat.client.bilibili.netty.handler.BilibiliConnectionHandler;
+import tech.ordinaryroad.live.chat.client.commons.base.listener.IBaseConnectionListener;
+import tech.ordinaryroad.live.chat.client.commons.base.msg.BaseCmdMsg;
+import tech.ordinaryroad.live.chat.client.commons.base.msg.BaseMsg;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +69,7 @@ class BilibiliBinaryFrameHandlerTest {
     String cookie = System.getenv("cookie");
     // TODO 修改版本
     ProtoverEnum protover = ProtoverEnum.NORMAL_BROTLI;
-    BilibiliWebSocketFrameFactory webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId, protover, cookie);
+    BilibiliWebSocketFrameFactory webSocketFrameFactory = BilibiliWebSocketFrameFactory.getInstance(roomId);
 
     @Test
     public void example() throws InterruptedException {
@@ -74,7 +78,7 @@ class BilibiliBinaryFrameHandlerTest {
         Bootstrap bootstrap = new Bootstrap();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         BilibiliConnectionHandler connectionHandler = null;
-        IBilibiliConnectionListener connectionListener = new IBilibiliConnectionListener() {
+        IBaseConnectionListener<BilibiliConnectionHandler> connectionListener = new IBaseConnectionListener<>() {
 
             @Override
             public void onConnected(BilibiliConnectionHandler connectionHandler) {
@@ -121,7 +125,7 @@ class BilibiliBinaryFrameHandlerTest {
                             null,
                             true,
                             new DefaultHttpHeaders()),
-                    connectionListener, roomId, protover, cookie
+                    roomId, protover, connectionListener, cookie
             );
             BilibiliBinaryFrameHandler bilibiliHandler = new BilibiliBinaryFrameHandler(new IBilibiliSendSmsReplyMsgListener() {
                 @Override
@@ -132,7 +136,7 @@ class BilibiliBinaryFrameHandlerTest {
                     JsonNode jsonNode2 = info.get(2);
                     Long uid = jsonNode2.get(0).asLong();
                     String uname = jsonNode2.get(1).asText();
-                    log.info("{} 收到弹幕 {}({})：{}",binaryFrameHandler.getRoomId(), uname, uid, danmuText);
+                    log.info("{} 收到弹幕 {}({})：{}", binaryFrameHandler.getRoomId(), uname, uid, danmuText);
                 }
 
                 @Override
@@ -183,12 +187,12 @@ class BilibiliBinaryFrameHandlerTest {
                 }
 
                 @Override
-                public void onOtherSendSmsReplyMsg(BilibiliBinaryFrameHandler binaryFrameHandler, CmdEnum cmd, SendSmsReplyMsg msg) {
+                public void onOtherCmdMsg(BilibiliCmdEnum cmd, BaseCmdMsg<BilibiliCmdEnum> cmdMsg) {
                     log.info("其他消息 {}", cmd);
                 }
 
                 @Override
-                public void onUnknownCmd(BilibiliBinaryFrameHandler binaryFrameHandler, String cmdString, SendSmsReplyMsg msg) {
+                public void onUnknownCmd(String cmdString, BaseMsg cmdMsg) {
                     log.info("未知cmd {}", cmdString);
                 }
             }, roomId);
@@ -254,6 +258,6 @@ class BilibiliBinaryFrameHandlerTest {
 
     private void sendAuth() {
         log.debug("发送认证包");
-        channel.writeAndFlush(webSocketFrameFactory.createAuth());
+        channel.writeAndFlush(webSocketFrameFactory.createAuth(protover, cookie));
     }
 }
